@@ -13,9 +13,9 @@
  * @param type - The type to be mapped.
  * @return  .\ - The corresponding const char *.
  */
-const char * token_type_to_string(token_type type) {
+const char * token_type_to_string(int type) {
   switch(type) {
-    // case ENDMARKER:        return "Endmarker";
+    case ENDMARKER:        return "Endmarker";
     case NAME:             return "Name";
     case NUMBER:           return "Number";
     case STRING:           return "String";

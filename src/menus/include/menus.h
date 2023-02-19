@@ -42,9 +42,9 @@
                                    || (t == ATEQUAL))         ? 1 : 0
 
 
-void print_not_puny_supported_reserved_word(token_type rw, int lineno);
+void print_not_puny_supported_reserved_word(int rw, int lineno);
 void print_unmatched_quote(char * literal, int lineno);
-void print_not_puny_supported_operator(token_type rw, int lineno);
+void print_not_puny_supported_operator(int rw, int lineno);
 void print_exp_error_message(char * literal, int lineno);
 void print_unsupported_escape(char * literal, int lineno);
 

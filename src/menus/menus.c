@@ -15,7 +15,7 @@
  * @param lineno - The lineno where it occured.
  * @return N/a
  */
-void print_not_puny_supported_reserved_word(token_type rw, int lineno) {
+void print_not_puny_supported_reserved_word(int rw, int lineno) {
   fprintf(stderr, "[LEXER]: Error, reserved word: `");
   fprintf(stderr, ERROR_COLOR);
   fprintf(stderr, BOLD_COLOR);
@@ -47,7 +47,7 @@ void print_unmatched_quote(char * literal, int lineno) {
  * @param lineno - The lineno where it occured.
  * @return N/a
  */
-void print_not_puny_supported_operator(token_type rw, int lineno) {
+void print_not_puny_supported_operator(int rw, int lineno) {
   fprintf(stderr, "[LEXER]: Error, operator: `");
   fprintf(stderr, ERROR_COLOR);
   fprintf(stderr, BOLD_COLOR);

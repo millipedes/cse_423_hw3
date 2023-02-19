@@ -28,8 +28,8 @@ YYERROROJB=src/parser/yyerror.o
 YYERRORH=src/parser/include/yyerror.h
 
 EXEFILE=./puny
-TARGETS=$(wildcard idata/tests/*.py)
-# TARGETS=./idata/tests/07cs_three.py
+# TARGETS=$(wildcard idata/tests/*.py)
+TARGETS=./idata/running_test.py
 
 LX=flex
 FLEXFILE=flex/punylex.l
@@ -43,7 +43,7 @@ BISOUT=src/parser/punygram.c
 BISOUTO=src/parser/punygram.o
 BISOUTH=src/parser/punygram.h
 
-all: objs $(BISOUTO) $(FLEXOUTO)
+all: $(BISOUTO) $(FLEXOUTO) objs
 	$(CC) $(FLEXOUTO) $(MAINOBJFILES) $(STACKOBJFILES) $(MENUOBJFILES) $(TOKENOBJFILES) $(FPPOBJFILES) $(TREEOBJFILES) $(BISOUTO) $(YYERROROJB) -o $(EXEFILE) -lm
 
 $(BISOUTO): $(BISOUT)
