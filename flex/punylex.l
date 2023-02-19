@@ -6,6 +6,7 @@
 #include "../file_preprocessing/include/file_preprocessing.h"
 #include "../stack/include/stack.h"
 #include "../menus/include/menus.h"
+#include "../parser/punygram.h"
 
 extern path_wrapper * g_path_wrapper;
 stack * indent_stack = NULL;

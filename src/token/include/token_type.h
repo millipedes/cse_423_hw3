@@ -14,7 +14,7 @@
 
 typedef enum {
   NAME = 257,
-  ENDMARKER,
+  // ENDMARKER,
   NUMBER,
   STRING,          // TODO
   NEWLINE,
