@@ -18,17 +18,6 @@
 #define NO_TOK(t)    ((t == COMMENT) \
                        || (t == NODENT)) ? 1 : 0
 
-extern int yylex_destroy();
-extern int yylex();
-
-extern token * yytok;
-extern FILE * yyin;
-extern char * yytext;
-extern int yylineno;
-extern stack * indent_stack;
-extern int update_stack(size_t value);
-extern int dedent_qty;
-
 typedef struct TOKEN_LIST_T {
   token * value;
   struct TOKEN_LIST_T * next;

@@ -13,8 +13,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "token_type.h"
 #include "../../main/include/constants_macros.h"
+#include "../../stack/include/stack.h"
 #include "../../menus/include/menus.h"
 
 // Delimitir used for floating point numbers
@@ -39,13 +39,13 @@
 #define NOT_NL(c) ((c != '\n') || (c != '\r')) ? 1 : 0
 
 // Is the category x NAME?
-#define IS_NAME_CATEGORY(x)   (x == NAME)   ? 1 : 0
+#define IS_NAME_CATEGORY(x)   (x == NAME_CAT)   ? 1 : 0
 // Is the category x STIRNG?
-#define IS_STRING_CATEGORY(x) (x == STRING) ? 1 : 0
+#define IS_STRING_CATEGORY(x) (x == STRING_CAT) ? 1 : 0
 // Is the category x INDENT?
-#define IS_INDENT_CATEGORY(x) (x == INDENT) ? 1 : 0
+#define IS_INDENT_CATEGORY(x) (x == INDENT_CAT) ? 1 : 0
 // Is the category x DEDENT?
-#define IS_DEDENT_CATEGORY(x) (x == DEDENT) ? 1 : 0
+#define IS_DEDENT_CATEGORY(x) (x == DEDENT_CAT) ? 1 : 0
 
 typedef struct TOKEN_T {
   int category;
@@ -58,13 +58,24 @@ typedef struct TOKEN_T {
   int float_flag;
 } token;
 
+extern int yylex_destroy();
+extern int yylex();
+
+extern token * yytok;
+extern FILE * yyin;
+extern char * yytext;
+extern int yylineno;
+extern stack * indent_stack;
+extern int dedent_qty;
+extern const char * token_type_to_string(int type);
+
 token * init_token(int category, char * text, int lineno, char * filename);
 int handle_int_expression(char * text, int lineno);
 double handle_float_expression(char * text, int lineno);
 char * handle_string_expansion(char * text, size_t text_len, int lineno);
 void handle_unsupported_escape(char * text, int curr_index, int lineno);
 token * deep_copy_token(token * original);
-void debug_token(token * the_token);
+void debug_token(token * the_token, int index);
 void free_token(token * the_token);
 
 #endif

@@ -39,13 +39,13 @@ token * init_token(int category, char * text, int lineno, char * filename) {
   if(IS_STRING_CATEGORY(category))
     the_token->sval = handle_string_expansion(text, text_len, lineno);
   else if(!strchr(text, FLOAT_DELIMITIR)
-      && the_token->category == NUMBER
+      && the_token->category == NUMBER_CAT
       && handle_int_expression(text, lineno) != FLOAT_FLAG)
     the_token->ival = handle_int_expression(text, lineno);
   else if((strchr(text, FLOAT_DELIMITIR)
         || strchr(text, LEXP_DELIMITIR)
         || strchr(text, UEXP_DELIMITIR))
-      && the_token->category == NUMBER) {
+      && the_token->category == NUMBER_CAT) {
     the_token->dval = handle_float_expression(text, lineno);
     the_token->float_flag = 1;
   }
@@ -200,13 +200,13 @@ token * deep_copy_token(token * original) {
     copy->sval = handle_string_expansion(original->text, text_len,
         original->lineno);
   else if(!strchr(original->text, FLOAT_DELIMITIR)
-      && copy->category == NUMBER
+      && copy->category == NUMBER_CAT
       && handle_int_expression(original->text, original->lineno) != FLOAT_FLAG)
     copy->ival = handle_int_expression(original->text, original->lineno);
   else if((strchr(original->text, FLOAT_DELIMITIR)
         || strchr(original->text, LEXP_DELIMITIR)
         || strchr(original->text, UEXP_DELIMITIR))
-      && copy->category == NUMBER) {
+      && copy->category == NUMBER_CAT) {
     copy->dval = handle_float_expression(original->text, original->lineno);
     copy->float_flag = 1;
   }
@@ -218,17 +218,25 @@ token * deep_copy_token(token * original) {
  * @param the_token - The token that is debugged.
  * @return      N/a
  */
-void debug_token(token * the_token) {
+void debug_token(token * the_token, int index) {
+  PRINT_C_N(SPACE, index)
   printf("%-17s", token_type_to_string(the_token->category));
+  PRINT_C_N(SPACE, index)
   printf("%-14s", the_token->text);
+  PRINT_C_N(SPACE, index)
   printf("%-8d", the_token->lineno);
+  PRINT_C_N(SPACE, index)
   printf("%-12s", the_token->filename);
-  if(IS_STRING_CATEGORY(the_token->category))
+  if(IS_STRING_CATEGORY(the_token->category)) {
+    PRINT_C_N(SPACE, index)
     printf("%-12s", the_token->sval);
-  else if(!the_token->float_flag && the_token->category == NUMBER)
+  } else if(!the_token->float_flag && the_token->category == NUMBER_CAT) {
+    PRINT_C_N(SPACE, index)
     printf("%-8d", the_token->ival);
-  else if(the_token->category == NUMBER)
+  } else if(the_token->category == NUMBER_CAT) {
+    PRINT_C_N(SPACE, index)
     printf("%-8f", the_token->dval);
+  }
   printf("\n");
 }
 

@@ -56,7 +56,7 @@ token_list * add_token(token_list * the_list, token * the_token) {
  */
 void debug_token_list(token_list * the_list) {
   if(the_list->value)
-    debug_token(the_list->value);
+    debug_token(the_list->value, 0);
   if(the_list->next)
     debug_token_list(the_list->next);
 }

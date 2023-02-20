@@ -12,8 +12,6 @@
 
 #include <stdlib.h>
 
-#include "../../parser/punygram.h"
-
 // typedef enum {
 //   NAME = 257,
 //   ENDMARKER,

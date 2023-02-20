@@ -7,9 +7,10 @@
  * @bug    None known
  * @todo   Nothing
  */
-#include "../token/include/token_list.h"
 #include "../file_preprocessing/include/file_preprocessing.h"
 #include "../parser/include/yyerror.h"
+#include "../tree/include/tree.h"
+#include "../parser/punygram.h"
 
 path_wrapper * g_path_wrapper = NULL;
 extern token * yytoken;
@@ -18,8 +19,13 @@ extern int yyparse();
 int main(int argc, char * argv[]) {
   g_path_wrapper = init_path_wrapper(argv[1]);
   yyin = fopen(g_path_wrapper->path_file, "r");
-  printf("%d\n", yyparse());
+  printf("main: %d\n", yyparse());
+  debug_tree(yylval.ast, 0);
+  free_path_wrapper(g_path_wrapper);
+  free_tree(yylval.ast);
+  free_token(yytoken);
   fclose(yyin);
+  yylex_destroy();
   // token_list * the_list = NULL;
   // int value = -2;
   // for(int i = 1; i < argc; i++) {

@@ -4,8 +4,6 @@
 #include "../main/include/constants_macros.h"
 #include "../token/include/token.h"
 #include "../file_preprocessing/include/file_preprocessing.h"
-#include "../stack/include/stack.h"
-#include "../menus/include/menus.h"
 #include "../parser/punygram.h"
 
 extern path_wrapper * g_path_wrapper;
@@ -13,6 +11,7 @@ stack * indent_stack = NULL;
 int dedent_qty = 0;
 token * yytoken = NULL;
 
+int allocate_tree(int category);
 int update_stack(char * value);
 int count_whitespace(char * value);
 %}
@@ -26,9 +25,7 @@ int count_whitespace(char * value);
 '(\\.|''|[^'\n])*[\n]     |
 \"(\\.|\"\"|[^\"\n])*[\n]       { print_unmatched_quote(yytext, yylineno); }
 
-<<EOF>>                         { yytoken = init_token(ENDMARKER, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return -1; }
+<<EOF>>                         {  return allocate_tree(ENDMARKER); }
 ^[ \t]+                      { int stack_result = update_stack(yytext);
                              yytoken = init_token(stack_result, yytext,
                                yylineno, g_path_wrapper->filename);
@@ -318,6 +315,12 @@ int count_whitespace(char * value);
                                     yylineno, g_path_wrapper->filename);
                                   return COLONEQUAL; }
 %%
+
+int allocate_tree(int category) {
+  yylval.ast = init_tree(init_token(category, yytext, yylineno,
+  g_path_wrapper->filename), category);
+  return category;
+}
 
 /**
  * This function updates the indent_stack with the given spacing value.

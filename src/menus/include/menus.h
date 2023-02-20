@@ -10,36 +10,38 @@
 #define MEN_H
 
 #include <stdio.h>
-#include "../../token/include/token_type.h"
+#include <stdlib.h>
 #include "../../main/include/constants_macros.h"
 
 // Is type t a reserved word that is not supported?
-#define RESERVED_WORD_NOT_SUPPORTED(t) ((t == IS)            \
-                                        || (t == IN)         \
-                                        || (t == POUND_TYPE) \
-                                        || (t == TYPE)       \
-                                        || (t == AWAIT)      \
-                                        || (t == ASYNC))     ? 1 : 0
+#define RESERVED_WORD_NOT_SUPPORTED(t) ((t == IS_CAT)            \
+                                        || (t == IN_CAT)         \
+                                        || (t == POUND_TYPE_CAT) \
+                                        || (t == TYPE_CAT)       \
+                                        || (t == AWAIT_CAT)      \
+                                        || (t == ASYNC_CAT))     ? 1 : 0
 
 // Is the opperator not supported?
-#define OPERATOR_NOT_SUPPORTED(t) ((t == TILDE)               \
-                                   || (t == LEFTSHIFT)        \
-                                   || (t == RIGHTSHIFT)       \
-                                   || (t == AMPEREQUAL)       \
-                                   || (t == VBAREQUAL)        \
-                                   || (t == CIRCUMFLEXEQUAL)  \
-                                   || (t == LEFTSHIFTEQUAL)   \
-                                   || (t == RIGHTSHIFTEQUAL)  \
-                                   || (t == AMPER)            \
-                                   || (t == VBAR)             \
-                                   || (t == CIRCUMFLEX)       \
-                                   || (t == PLUSEQUAL)        \
-                                   || (t == MINEQUAL)         \
-                                   || (t == STAREQUAL)        \
-                                   || (t == SLASHEQUAL)       \
-                                   || (t == PERCENTEQUAL)     \
-                                   || (t == DOUBLESLASHEQUAL) \
-                                   || (t == ATEQUAL))         ? 1 : 0
+#define OPERATOR_NOT_SUPPORTED(t) ((t == TILDE_CAT)               \
+                                   || (t == LEFTSHIFT_CAT)        \
+                                   || (t == RIGHTSHIFT_CAT)       \
+                                   || (t == AMPEREQUAL_CAT)       \
+                                   || (t == VBAREQUAL_CAT)        \
+                                   || (t == CIRCUMFLEXEQUAL_CAT)  \
+                                   || (t == LEFTSHIFTEQUAL_CAT)   \
+                                   || (t == RIGHTSHIFTEQUAL_CAT)  \
+                                   || (t == AMPER_CAT)            \
+                                   || (t == VBAR_CAT)             \
+                                   || (t == CIRCUMFLEX_CAT)       \
+                                   || (t == PLUSEQUAL_CAT)        \
+                                   || (t == MINEQUAL_CAT)         \
+                                   || (t == STAREQUAL_CAT)        \
+                                   || (t == SLASHEQUAL_CAT)       \
+                                   || (t == PERCENTEQUAL_CAT)     \
+                                   || (t == DOUBLESLASHEQUAL_CAT) \
+                                   || (t == ATEQUAL_CAT))         ? 1 : 0
+
+extern const char * token_type_to_string(int type);
 
 
 void print_not_puny_supported_reserved_word(int rw, int lineno);
