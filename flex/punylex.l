@@ -10,6 +10,7 @@ extern path_wrapper * g_path_wrapper;
 stack * indent_stack = NULL;
 int dedent_qty = 0;
 token * yytoken = NULL;
+tree * head = NULL;
 
 int allocate_tree(int category);
 int update_stack(char * value);
@@ -169,9 +170,7 @@ int count_whitespace(char * value);
 "."[0-9]+                        |
 "."[0-9]+(e|E)[-+]?[0-9]*        |
 [0-9][0-9_]*"."[0-9]+            |
-[0-9][0-9_]*"."[0-9]+(e|E)[-+]?[0-9]* { yytoken = init_token(NUMBER, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NUMBER; }
+[0-9][0-9_]*"."[0-9]+(e|E)[-+]?[0-9]* { return allocate_tree(NUMBER); }
 
 "("                             {  yytoken = init_token(LPAR, yytext,
                                     yylineno, g_path_wrapper->filename);
@@ -194,9 +193,7 @@ int count_whitespace(char * value);
 ";"                             {  yytoken = init_token(SEMI, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return SEMI; }
-"+"                             {  yytoken = init_token(PLUS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return PLUS; }
+"+"                             { return allocate_tree(PLUS); }
 "-"                             {  yytoken = init_token(MINUS, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return MINUS; }
@@ -257,9 +254,7 @@ int count_whitespace(char * value);
 ">>"                            {  yytoken = init_token(RIGHTSHIFT, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return RIGHTSHIFT; }
-"**"                            {  yytoken = init_token(DOUBLESTAR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DOUBLESTAR; }
+"**"                            { return allocate_tree(DOUBLESTAR); }
 "+="                            {  yytoken = init_token(PLUSEQUAL, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return PLUSEQUAL; }

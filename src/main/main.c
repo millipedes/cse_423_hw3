@@ -15,6 +15,7 @@
 path_wrapper * g_path_wrapper = NULL;
 extern token * yytoken;
 extern int yyparse();
+extern tree * head;
 
 int main(int argc, char * argv[]) {
   g_path_wrapper = init_path_wrapper(argv[1]);

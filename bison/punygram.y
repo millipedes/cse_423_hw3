@@ -132,9 +132,52 @@ const char * token_type_to_string(int type);
 
 %%
 
-file_input: ENDMARKER { return ENDMARKER; } ;
+file_input
+  : ENDMARKER { return ENDMARKER; }
+  | atom
+  ;
+
+atom
+  : NUMBER
+  ;
 
 %%
+/*
+file_input: (NEWLINE | stmt)* ENDMARKER
+stmt: simple_stmt | compound_stmt
+  simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+    small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
+      expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) | [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
+        yield_expr: 'yield' [yield_arg]
+        testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
+          star_expr: '*' expr
+            expr: xor_expr ('|' xor_expr)*
+              xor_expr: and_expr ('^' and_expr)*
+                and_expr: shift_expr ('&' shift_expr)*
+                  shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+                    arith_expr: term (('+'|'-') term)*
+                      term: factor (('*'|'@'|'/'|'%'|'//') factor)*
+                        factor: ('+'|'-'|'~') factor | power
+                          power: atom_expr ['**' factor]
+                            atom_expr: [AWAIT] atom trailer*
+                              atom: ('(' [yield_expr|testlist_comp] ')' | '[' [testlist_comp] ']' | '{' [dictorsetmaker] '}' | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
+                                dictorsetmaker: ( ((test ':' test | '**' expr) (comp_for | (',' (test ':' test | '**' expr))* [','])) | ((test | star_expr) (comp_for | (',' (test | star_expr))* [','])) )
+                                testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
+                                  namedexpr_test: test [':=' test]
+                                    test: or_test ['if' or_test 'else' test] | lambdef
+                                      lambdef: 'lambda' [varargslist] ':' test
+                                  comp_for: [ASYNC] sync_comp_for
+                                    sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
+                                      exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
+                              trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+                                subscriptlist: subscript (',' subscript)* [',']
+                                  subscript: test | [test] ':' [test] [sliceop]
+                                    sliceop: ':' [test]
+        testlist: test (',' test)* [',']
+        annassign: ':' test ['=' (yield_expr|testlist_star_expr)]
+        augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
+        testlist: test (',' test)* [',']
+*/
 
 const char * token_type_to_string(int type) {
   switch(type) {
@@ -242,6 +285,53 @@ const char * token_type_to_string(int type) {
 }
 
 /*
+
+##############
+#  COMPLETE  #
+##############
+
+##############
+#   PARTIAL  #
+##############
+file_input: (NEWLINE | stmt)* ENDMARKER
+stmt: simple_stmt | compound_stmt
+  simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+    small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
+      expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) | [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
+        yield_expr: 'yield' [yield_arg]
+        testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
+          star_expr: '*' expr
+            expr: xor_expr ('|' xor_expr)*
+              xor_expr: and_expr ('^' and_expr)*
+                and_expr: shift_expr ('&' shift_expr)*
+                  shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+                    arith_expr: term (('+'|'-') term)*
+                      term: factor (('*'|'@'|'/'|'%'|'//') factor)*
+                        factor: ('+'|'-'|'~') factor | power
+                          power: atom_expr ['**' factor]
+                            atom_expr: [AWAIT] atom trailer*
+                              atom: ('(' [yield_expr|testlist_comp] ')' | '[' [testlist_comp] ']' | '{' [dictorsetmaker] '}' | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
+                                dictorsetmaker: ( ((test ':' test | '**' expr) (comp_for | (',' (test ':' test | '**' expr))* [','])) | ((test | star_expr) (comp_for | (',' (test | star_expr))* [','])) )
+                                testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
+                                  namedexpr_test: test [':=' test]
+                                    test: or_test ['if' or_test 'else' test] | lambdef
+                                      lambdef: 'lambda' [varargslist] ':' test
+                                  comp_for: [ASYNC] sync_comp_for
+                                    sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
+                                      exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
+                              trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
+                                subscriptlist: subscript (',' subscript)* [',']
+                                  subscript: test | [test] ':' [test] [sliceop]
+                                    sliceop: ':' [test]
+        testlist: test (',' test)* [',']
+        annassign: ':' test ['=' (yield_expr|testlist_star_expr)]
+        augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
+        testlist: test (',' test)* [',']
+
+
+##############
+# INCOMPLETE #
+##############
 
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
