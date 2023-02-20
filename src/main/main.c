@@ -15,13 +15,11 @@
 path_wrapper * g_path_wrapper = NULL;
 extern token * yytoken;
 extern int yyparse();
-extern tree * head;
 
 int main(int argc, char * argv[]) {
   g_path_wrapper = init_path_wrapper(argv[1]);
   yyin = fopen(g_path_wrapper->path_file, "r");
   printf("main: %d\n", yyparse());
-  debug_tree(yylval.ast, 0);
   free_path_wrapper(g_path_wrapper);
   free_tree(yylval.ast);
   free_token(yytoken);

@@ -14,13 +14,19 @@
 # NB: due to the way TYPE_COMMENT is tokenized it will always be followed
 #     by a NEWLINE
 */
+#include "../file_preprocessing/include/file_preprocessing.h"
+
 extern int yylex();
 extern int yyerror(char *);
+extern path_wrapper * g_path_wrapper;
+extern char * yytext;
+
 const char * token_type_to_string(int type);
 
 %}
 
 %code requires {
+  #include "../file_preprocessing/include/file_preprocessing.h"
   #include "../tree/include/tree.h"
 }
 
@@ -28,113 +34,122 @@ const char * token_type_to_string(int type);
   tree * ast;
 }
 
-%token NAME
-%token ENDMARKER
-%token NUMBER
-%token STRING
-%token NEWLINE
-%token INDENT
-%token DEDENT
-%token NODENT
-%token LPAR
-%token RPAR
-%token LSQB
-%token RSQB
-%token COLON
-%token COMMA
-%token SEMI
-%token PLUS
-%token MINUS
-%token STAR
-%token SLASH
-%token VBAR
-%token AMPER
-%token LESS
-%token GREATER
-%token EQUAL
-%token DOT
-%token PERCENT
-%token LBRACE
-%token RBRACE
-%token EQEQUAL
-%token NOTEQUAL
-%token LESSEQUAL
-%token GREATEREQUAL
-%token TILDE
-%token CIRCUMFLEX
-%token LEFTSHIFT
-%token RIGHTSHIFT
-%token DOUBLESTAR
-%token PLUSEQUAL
-%token MINEQUAL
-%token STAREQUAL
-%token SLASHEQUAL
-%token PERCENTEQUAL
-%token AMPEREQUAL
-%token VBAREQUAL
-%token CIRCUMFLEXEQUAL
-%token LEFTSHIFTEQUAL
-%token RIGHTSHIFTEQUAL
-%token DOUBLESTAREQUAL
-%token DOUBLESLASH
-%token DOUBLESLASHEQUAL
-%token AT
-%token ATEQUAL
-%token RARROW
-%token ELLIPSIS
-%token COLONEQUAL
-%token OP
-%token AWAIT
-%token ASYNC
-%token TYPE
-%token TYPE_IGNORE
-%token TYPE_COMMENT
-%token ERRORTOKEN
-%token POUND_TYPE
-%token COMMENT
-%token NL
-%token ENCODING
-%token FALSE
-%token NONE
-%token TRUE
-%token AND
-%token AS
-%token ASSERT
-%token BREAK
-%token CLASS
-%token CONTINUE
-%token DEF
-%token DEL
-%token ELIF
-%token ELSE
-%token EXCEPT
-%token FINALLY
-%token FOR
-%token FROM
-%token IF
-%token IMPORT
-%token IN
-%token IS
-%token LAMBDA
-%token NONLOCAL
-%token NOT
-%token OR
-%token GLOBAL
-%token RAISE
-%token RETURN
-%token TRY
-%token WHILE
-%token WITH
-%token YIELD
-%token PASS
+%token <ast> NAME
+%token <ast> ENDMARKER
+%token <ast> NUMBER
+%token <ast> STRING
+%token <ast> NEWLINE
+%token <ast> INDENT
+%token <ast> DEDENT
+%token <ast> NODENT
+%token <ast> LPAR
+%token <ast> RPAR
+%token <ast> LSQB
+%token <ast> RSQB
+%token <ast> COLON
+%token <ast> COMMA
+%token <ast> SEMI
+%token <ast> PLUS
+%token <ast> MINUS
+%token <ast> STAR
+%token <ast> SLASH
+%token <ast> VBAR
+%token <ast> AMPER
+%token <ast> LESS
+%token <ast> GREATER
+%token <ast> EQUAL
+%token <ast> DOT
+%token <ast> PERCENT
+%token <ast> LBRACE
+%token <ast> RBRACE
+%token <ast> EQEQUAL
+%token <ast> NOTEQUAL
+%token <ast> LESSEQUAL
+%token <ast> GREATEREQUAL
+%token <ast> TILDE
+%token <ast> CIRCUMFLEX
+%token <ast> LEFTSHIFT
+%token <ast> RIGHTSHIFT
+%token <ast> DOUBLESTAR
+%token <ast> PLUSEQUAL
+%token <ast> MINEQUAL
+%token <ast> STAREQUAL
+%token <ast> SLASHEQUAL
+%token <ast> PERCENTEQUAL
+%token <ast> AMPEREQUAL
+%token <ast> VBAREQUAL
+%token <ast> CIRCUMFLEXEQUAL
+%token <ast> LEFTSHIFTEQUAL
+%token <ast> RIGHTSHIFTEQUAL
+%token <ast> DOUBLESTAREQUAL
+%token <ast> DOUBLESLASH
+%token <ast> DOUBLESLASHEQUAL
+%token <ast> AT
+%token <ast> ATEQUAL
+%token <ast> RARROW
+%token <ast> ELLIPSIS
+%token <ast> COLONEQUAL
+%token <ast> OP
+%token <ast> AWAIT
+%token <ast> ASYNC
+%token <ast> TYPE
+%token <ast> TYPE_IGNORE
+%token <ast> TYPE_COMMENT
+%token <ast> ERRORTOKEN
+%token <ast> POUND_TYPE
+%token <ast> COMMENT
+%token <ast> NL
+%token <ast> ENCODING
+%token <ast> FALSE
+%token <ast> NONE
+%token <ast> TRUE
+%token <ast> AND
+%token <ast> AS
+%token <ast> ASSERT
+%token <ast> BREAK
+%token <ast> CLASS
+%token <ast> CONTINUE
+%token <ast> DEF
+%token <ast> DEL
+%token <ast> ELIF
+%token <ast> ELSE
+%token <ast> EXCEPT
+%token <ast> FINALLY
+%token <ast> FOR
+%token <ast> FROM
+%token <ast> IF
+%token <ast> IMPORT
+%token <ast> IN
+%token <ast> IS
+%token <ast> LAMBDA
+%token <ast> NONLOCAL
+%token <ast> NOT
+%token <ast> OR
+%token <ast> GLOBAL
+%token <ast> RAISE
+%token <ast> RETURN
+%token <ast> TRY
+%token <ast> WHILE
+%token <ast> WITH
+%token <ast> YIELD
+%token <ast> PASS
 
-%type <ast> file_input
+%type <ast> file_input factor atom
 
 %%
 
 file_input
   : ENDMARKER { return ENDMARKER; }
-  | atom
+  | factor
+  ;
+
+factor
+  : PLUS atom {
+                $$ = init_tree(init_token(PLUS, yytext, yylineno,
+                g_path_wrapper->filename), PLUS);
+                $$ = add_child($$, $2);
+                debug_tree($$, 0);
+              }
   ;
 
 atom
