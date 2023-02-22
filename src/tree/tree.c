@@ -2,10 +2,9 @@
 
 tree * init_tree(token * leaf, int prodrule) {
   tree * the_tree = calloc(1, sizeof(struct TREE_T));
-  // size_t symbolname_len = strnlen(yytext, MAX_LEXEME_SIZE);
-  // the_tree->symbolname = calloc(symbolname_len + 1, sizeof(char));
-  // strncpy(the_tree->symbolname, yytext, MAX_LEXEME_SIZE);
-  the_tree->symbolname = NULL;
+  size_t symbolname_len = strnlen(yytext, MAX_LEXEME_SIZE);
+  the_tree->symbolname = calloc(symbolname_len + 1, sizeof(char));
+  strncpy(the_tree->symbolname, yytext, symbolname_len);
   the_tree->leaf = leaf;
   the_tree->prodrule = prodrule;
   the_tree->kids = NULL;

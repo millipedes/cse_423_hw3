@@ -134,26 +134,50 @@ const char * token_type_to_string(int type);
 %token <ast> YIELD
 %token <ast> PASS
 
-%type <ast> file_input factor atom
+%type <ast> file_input arith_expr term factor atom
 
 %%
 
 file_input
-  : ENDMARKER { return ENDMARKER; }
-  | factor
+  : arith_expr { debug_tree($$, 0); return ENDMARKER; }
+  | ENDMARKER { return ENDMARKER; }
+  ;
+
+arith_expr
+  : term
+  | term PLUS term {
+                     $2 = add_child($2, $1);
+                     $2 = add_child($2, $3);
+                     $$ = $2;
+                   }
+  ;
+
+term
+  : factor      { $$ = $1; }
+  | factor AT factor {
+                         $2 = add_child($2, $1);
+                         $2 = add_child($2, $3);
+                         $$ = $2;
+                       }
+  | factor STAR factor {
+                         $2 = add_child($2, $1);
+                         $2 = add_child($2, $3);
+                         $$ = $2;
+                       }
+  | factor SLASH factor {
+                         $2 = add_child($2, $1);
+                         $2 = add_child($2, $3);
+                         $$ = $2;
+                        }
   ;
 
 factor
-  : PLUS atom {
-                $$ = init_tree(init_token(PLUS, yytext, yylineno,
-                g_path_wrapper->filename), PLUS);
-                $$ = add_child($$, $2);
-                debug_tree($$, 0);
-              }
+  : PLUS factor { $$ = add_child($1, $2); }
+  | atom { $$ = $1; }
   ;
 
 atom
-  : NUMBER
+  : NUMBER { $$ = $1; }
   ;
 
 %%

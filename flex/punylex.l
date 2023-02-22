@@ -197,12 +197,8 @@ int count_whitespace(char * value);
 "-"                             {  yytoken = init_token(MINUS, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return MINUS; }
-"*"                             {  yytoken = init_token(STAR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return STAR; }
-"/"                             {  yytoken = init_token(SLASH, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return SLASH; }
+"*"                             { return allocate_tree(STAR); }
+"/"                             { return allocate_tree(SLASH); }
 "|"                             {  yytoken = init_token(VBAR, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return VBAR; }
@@ -221,9 +217,7 @@ int count_whitespace(char * value);
 "."                             {  yytoken = init_token(DOT, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return DOT; }
-"%"                             {  yytoken = init_token(PERCENT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return PERCENT; }
+"%"                             { return allocate_tree(PERCENT); }
 "{"                             {  yytoken = init_token(LBRACE, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return LBRACE; }
@@ -294,9 +288,7 @@ int count_whitespace(char * value);
 "//="                           {  yytoken = init_token(DOUBLESLASHEQUAL, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return DOUBLESLASHEQUAL; }
-"@"                             {  yytoken = init_token(AT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return AT; }
+"@"                             { return allocate_tree(AT); }
 "@="                            {  yytoken = init_token(ATEQUAL, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return ATEQUAL; }
