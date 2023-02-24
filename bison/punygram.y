@@ -134,7 +134,9 @@ const char * token_type_to_string(int type);
 %token <ast> YIELD
 %token <ast> PASS
 
-%type <ast> file_input arith_expr term factor atom
+%type <ast> file_input arith_expr terms term factors factor atom
+
+%left PLUS MINUS STAR SLASH
 
 %%
 
@@ -145,7 +147,26 @@ file_input
 
 arith_expr
   : term
-  | term PLUS term {
+  | term PLUS terms {
+                     $2 = add_child($2, $1);
+                     $2 = add_child($2, $3);
+                     $$ = $2;
+                   }
+  | term MINUS terms {
+                     $2 = add_child($2, $1);
+                     $2 = add_child($2, $3);
+                     $$ = $2;
+                   }
+  ;
+
+terms
+  : term
+  | terms PLUS term {
+                     $2 = add_child($2, $1);
+                     $2 = add_child($2, $3);
+                     $$ = $2;
+                   }
+  | terms MINUS term {
                      $2 = add_child($2, $1);
                      $2 = add_child($2, $3);
                      $$ = $2;
@@ -154,25 +175,66 @@ arith_expr
 
 term
   : factor      { $$ = $1; }
-  | factor AT factor {
-                         $2 = add_child($2, $1);
-                         $2 = add_child($2, $3);
-                         $$ = $2;
-                       }
-  | factor STAR factor {
-                         $2 = add_child($2, $1);
-                         $2 = add_child($2, $3);
-                         $$ = $2;
-                       }
-  | factor SLASH factor {
+  | factor STAR factors {
+                          $2 = add_child($2, $1);
+                          $2 = add_child($2, $3);
+                          $$ = $2;
+                        }
+  | factor SLASH factors  {
+                            $2 = add_child($2, $1);
+                            $2 = add_child($2, $3);
+                            $$ = $2;
+                          }
+  | factor DOUBLESLASH factors  {
+                            $2 = add_child($2, $1);
+                            $2 = add_child($2, $3);
+                            $$ = $2;
+                          }
+  | factor PERCENT factors  {
+                            $2 = add_child($2, $1);
+                            $2 = add_child($2, $3);
+                            $$ = $2;
+                          }
+  | factor AT factors {
+                        $2 = add_child($2, $1);
+                        $2 = add_child($2, $3);
+                        $$ = $2;
+                      }
+  ;
+
+factors
+  : factor
+  | factors STAR factor {
                          $2 = add_child($2, $1);
                          $2 = add_child($2, $3);
                          $$ = $2;
                         }
+  | factors AT factor {
+                         $2 = add_child($2, $1);
+                         $2 = add_child($2, $3);
+                         $$ = $2;
+                        }
+  | factors SLASH factor {
+                         $2 = add_child($2, $1);
+                         $2 = add_child($2, $3);
+                         $$ = $2;
+                        }
+  | factor DOUBLESLASH factor  {
+                            $2 = add_child($2, $1);
+                            $2 = add_child($2, $3);
+                            $$ = $2;
+                          }
+  | factor PERCENT factor  {
+                            $2 = add_child($2, $1);
+                            $2 = add_child($2, $3);
+                            $$ = $2;
+                          }
   ;
 
 factor
-  : PLUS factor { $$ = add_child($1, $2); }
+  : PLUS factor  { $$ = add_child($1, $2); }
+  | TILDE factor { $$ = add_child($1, $2); }
+  | MINUS factor { $$ = add_child($1, $2); }
   | atom { $$ = $1; }
   ;
 

@@ -34,10 +34,10 @@ void debug_tree(tree * the_tree, int index) {
       PRINT_C_N(SPACE, index)
       printf("symbolname: `%s`\n", the_tree->symbolname);
     }
-    if(the_tree->leaf) {
-      PRINT_C_N(SPACE, index)
-      debug_token(the_tree->leaf, index);
-    }
+    // if(the_tree->leaf) {
+    //   PRINT_C_N(SPACE, index)
+    //   debug_token(the_tree->leaf, index);
+    // }
     PRINT_C_N(SPACE, index)
     printf("no_kids: %d\n", the_tree->no_kids);
     if(the_tree->kids) {

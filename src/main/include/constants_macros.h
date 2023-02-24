@@ -22,7 +22,7 @@
                            || (c == ' ')   \
                            || (c == '\t')) ? 1 : 0
 #define NOT_WHITESPACE(c) !IS_WHITESPACE(c) ? 1 : 0
-#define PRINT_C_N(c, n) for(int zyx = 0; zyx < n; zyx++) printf("%c", c);
+#define PRINT_C_N(c, n) for(int zyx = 0; zyx < n; zyx++) printf("%s", c);
 
 #define NAME_CAT             258
 #define NUMBER_CAT           260
@@ -55,7 +55,7 @@
 #define IN_CAT               343
 #define IS_CAT               344
 
-#define SPACE ' '
+#define SPACE "  "
 #define BOLD_COLOR  "\e[1m"
 #define ERROR_COLOR "\033[97m"
 #define END_COLOR   "\033[0m"

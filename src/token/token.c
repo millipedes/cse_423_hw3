@@ -220,22 +220,22 @@ token * deep_copy_token(token * original) {
  */
 void debug_token(token * the_token, int index) {
   PRINT_C_N(SPACE, index)
-  printf("%-17s", token_type_to_string(the_token->category));
+  printf("%17s", token_type_to_string(the_token->category));
   PRINT_C_N(SPACE, index)
-  printf("%-14s", the_token->text);
+  printf("%14s", the_token->text);
   PRINT_C_N(SPACE, index)
-  printf("%-8d", the_token->lineno);
+  printf("%8d", the_token->lineno);
   PRINT_C_N(SPACE, index)
-  printf("%-12s", the_token->filename);
+  printf("%12s", the_token->filename);
   if(IS_STRING_CATEGORY(the_token->category)) {
     PRINT_C_N(SPACE, index)
-    printf("%-12s", the_token->sval);
+    printf("%12s", the_token->sval);
   } else if(!the_token->float_flag && the_token->category == NUMBER_CAT) {
     PRINT_C_N(SPACE, index)
-    printf("%-8d", the_token->ival);
+    printf("%8d", the_token->ival);
   } else if(the_token->category == NUMBER_CAT) {
     PRINT_C_N(SPACE, index)
-    printf("%-8f", the_token->dval);
+    printf("%8f", the_token->dval);
   }
   printf("\n");
 }

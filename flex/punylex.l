@@ -194,9 +194,7 @@ int count_whitespace(char * value);
                                     yylineno, g_path_wrapper->filename);
                                   return SEMI; }
 "+"                             { return allocate_tree(PLUS); }
-"-"                             {  yytoken = init_token(MINUS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return MINUS; }
+"-"                             { return allocate_tree(MINUS); }
 "*"                             { return allocate_tree(STAR); }
 "/"                             { return allocate_tree(SLASH); }
 "|"                             {  yytoken = init_token(VBAR, yytext,
@@ -236,9 +234,7 @@ int count_whitespace(char * value);
 ">="                            {  yytoken = init_token(GREATEREQUAL, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return GREATEREQUAL; }
-"~"                             {  yytoken = init_token(TILDE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return TILDE; }
+"~"                             { return allocate_tree(TILDE); }
 "^"                             {  yytoken = init_token(CIRCUMFLEX, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return CIRCUMFLEX; }
@@ -282,9 +278,7 @@ int count_whitespace(char * value);
 "**="                           {  yytoken = init_token(DOUBLESTAREQUAL, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return DOUBLESTAREQUAL; }
-"//"                            {  yytoken = init_token(DOUBLESLASH, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DOUBLESLASH; }
+"//"                            { return allocate_tree(DOUBLESLASH); }
 "//="                           {  yytoken = init_token(DOUBLESLASHEQUAL, yytext,
                                     yylineno, g_path_wrapper->filename);
                                   return DOUBLESLASHEQUAL; }
