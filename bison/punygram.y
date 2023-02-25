@@ -235,7 +235,12 @@ factor
   : PLUS factor  { $$ = add_child($1, $2); }
   | TILDE factor { $$ = add_child($1, $2); }
   | MINUS factor { $$ = add_child($1, $2); }
+  | power
   | atom { $$ = $1; }
+  ;
+
+power
+  : atom DOUBLESTAR factor
   ;
 
 atom
