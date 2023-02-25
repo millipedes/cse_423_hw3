@@ -19,149 +19,66 @@ int count_whitespace(char * value);
 %%
 
 '(\\.|''|[^'\n])*'     |
-\"(\\.|\"\"|[^\"\n])*\"         { yytoken = init_token(STRING, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return STRING; }
+\"(\\.|\"\"|[^\"\n])*\"         { return allocate_tree(STRING); }
 
 '(\\.|''|[^'\n])*[\n]     |
 \"(\\.|\"\"|[^\"\n])*[\n]       { print_unmatched_quote(yytext, yylineno); }
 
-<<EOF>>                         {  return allocate_tree(ENDMARKER); }
-^[ \t]+                      { int stack_result = update_stack(yytext);
-                             yytoken = init_token(stack_result, yytext,
-                               yylineno, g_path_wrapper->filename);
-                             return stack_result; }
+<<EOF>>                         { return allocate_tree(ENDMARKER); }
+^[ \t]+                         { int stack_result = update_stack(yytext);
+                                    yytoken = init_token(stack_result, yytext,
+                                    yylineno, g_path_wrapper->filename);
+                                  return stack_result; }
 \\[\n][ \t]*
 
-[\n\v\f\r]/[^ \t\n\v\f\r]+ { int stack_result = update_stack(yytext);
-                             yytoken = init_token(stack_result, yytext,
-                               yylineno, g_path_wrapper->filename);
-                             return stack_result; }
-[\n\v\f\r]                     { yytoken = init_token(NEWLINE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NEWLINE; }
+[\n\v\f\r]/[^ \t\n\v\f\r]+      { int stack_result = update_stack(yytext);
+                                     yytoken = init_token(stack_result, yytext,
+                                     yylineno, g_path_wrapper->filename);
+                                  return stack_result; }
+[\n\v\f\r]                      { return allocate_tree(NEWLINE); }
 
 [ \t]
 
-"#type"                         { yytoken = init_token(POUND_TYPE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return POUND_TYPE; }
-#.*                             { yytoken = init_token(COMMENT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return COMMENT; }
-
-
-"await"                         { yytoken = init_token(AWAIT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return AWAIT; }
-"async"                         { yytoken = init_token(ASYNC, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return ASYNC; }
-"type"                         { yytoken = init_token(TYPE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return TYPE; }
-"False"                         { yytoken = init_token(FALSE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return FALSE; }
-"None"                          { yytoken = init_token(NONE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NONE; }
-"True"                          { yytoken = init_token(TRUE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return TRUE; }
-"and"                           { yytoken = init_token(AND, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return AND; }
-"as"                            { yytoken = init_token(AS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return AS; }
-"assert"                        { yytoken = init_token(ASSERT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return ASSERT; }
-"break"                         { yytoken = init_token(BREAK, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return BREAK; }
-"class"                         { yytoken = init_token(CLASS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return CLASS; }
-"continue"                      { yytoken = init_token(CONTINUE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return CONTINUE; }
-"def"                           { yytoken = init_token(DEF, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DEF; }
-"del"                           { yytoken = init_token(DEL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DEL; }
-"elif"                          { yytoken = init_token(ELIF, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return ELIF; }
-"else"                          { yytoken = init_token(ELSE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return ELSE; }
-"except"                        { yytoken = init_token(EXCEPT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return EXCEPT; }
-"finally"                       { yytoken = init_token(FINALLY, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return FINALLY; }
-"for"                           { yytoken = init_token(FOR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return FOR; }
-"from"                          { yytoken = init_token(FROM, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return FROM; }
-"if"                            { yytoken = init_token(IF, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return IF; }
-"import"                        { yytoken = init_token(IMPORT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return IMPORT; }
-"in"                            { yytoken = init_token(IN, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return IN; }
-"is"                            { yytoken = init_token(IS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return IS; }
-"lambda"                        { yytoken = init_token(LAMBDA, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LAMBDA; }
-"nonlocal"                      { yytoken = init_token(NONLOCAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NONLOCAL; }
-"not"                           { yytoken = init_token(NOT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NOT; }
-"or"                            { yytoken = init_token(OR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return OR; }
-"global"                        { yytoken = init_token(GLOBAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return GLOBAL; }
-"raise"                         { yytoken = init_token(RAISE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RAISE; }
-"return"                        { yytoken = init_token(RETURN, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RETURN; }
-"try"                           { yytoken = init_token(TRY, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return TRY; }
-"while"                         { yytoken = init_token(WHILE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return WHILE; }
-"with"                          { yytoken = init_token(WITH, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return WITH; }
-"yield"                         { yytoken = init_token(YIELD, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return YIELD; }
-"pass"                          { yytoken = init_token(PASS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return PASS; }
-[A-Za-z_][A-Za-z0-9_]*           { yytoken = init_token(NAME, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NAME; }
+"#type"                         { return allocate_tree(POUND_TYPE); }
+#.*                             { return allocate_tree(COMMENT); }
+"await"                         { return allocate_tree(AWAIT); }
+"async"                         { return allocate_tree(ASYNC); }
+"type"                          { return allocate_tree(TYPE); }
+"False"                         { return allocate_tree(FALSE); }
+"None"                          { return allocate_tree(NONE); }
+"True"                          { return allocate_tree(TRUE); }
+"and"                           { return allocate_tree(AND); }
+"as"                            { return allocate_tree(AS); }
+"assert"                        { return allocate_tree(ASSERT); }
+"break"                         { return allocate_tree(BREAK); }
+"class"                         { return allocate_tree(CLASS); }
+"continue"                      { return allocate_tree(CONTINUE); }
+"print"                         { return allocate_tree(PRINT); }
+"def"                           { return allocate_tree(DEF); }
+"del"                           { return allocate_tree(DEL); }
+"elif"                          { return allocate_tree(ELIF); }
+"else"                          { return allocate_tree(ELSE); }
+"except"                        { return allocate_tree(EXCEPT); }
+"finally"                       { return allocate_tree(FINALLY); }
+"for"                           { return allocate_tree(FOR); }
+"from"                          { return allocate_tree(FROM); }
+"if"                            { return allocate_tree(IF); }
+"import"                        { return allocate_tree(IMPORT); }
+"in"                            { return allocate_tree(IN); }
+"is"                            { return allocate_tree(IS); }
+"lambda"                        { return allocate_tree(LAMBDA); }
+"nonlocal"                      { return allocate_tree(NONLOCAL); }
+"not"                           { return allocate_tree(NOT); }
+"or"                            { return allocate_tree(OR); }
+"global"                        { return allocate_tree(GLOBAL); }
+"raise"                         { return allocate_tree(RAISE); }
+"return"                        { return allocate_tree(RETURN); }
+"try"                           { return allocate_tree(TRY); }
+"while"                         { return allocate_tree(WHILE); }
+"with"                          { return allocate_tree(WITH); }
+"yield"                         { return allocate_tree(YIELD); }
+"pass"                          { return allocate_tree(PASS); }
+[A-Za-z_][A-Za-z0-9_]*          { return allocate_tree(NAME); }
 
 [0-9][0-9_]+                     |
 [0-9][0-9_]+(e|E)[-+]?[0-9]*     |
@@ -172,129 +89,53 @@ int count_whitespace(char * value);
 [0-9][0-9_]*"."[0-9]+            |
 [0-9][0-9_]*"."[0-9]+(e|E)[-+]?[0-9]* { return allocate_tree(NUMBER); }
 
-"("                             {  yytoken = init_token(LPAR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LPAR; }
-")"                             {  yytoken = init_token(RPAR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RPAR; }
-"["                             {  yytoken = init_token(LSQB, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LSQB; }
-"]"                             {  yytoken = init_token(RSQB, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RSQB; }
-":"                             {  yytoken = init_token(COLON, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return COLON; }
-","                             {  yytoken = init_token(COMMA, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return COMMA; }
-";"                             {  yytoken = init_token(SEMI, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return SEMI; }
+"("                             { return allocate_tree(LPAR); }
+")"                             { return allocate_tree(RPAR); }
+"["                             { return allocate_tree(LSQB); }
+"]"                             { return allocate_tree(RSQB); }
+":"                             { return allocate_tree(COLON); }
+","                             { return allocate_tree(COMMA); }
+";"                             { return allocate_tree(SEMI); }
 "+"                             { return allocate_tree(PLUS); }
 "-"                             { return allocate_tree(MINUS); }
 "*"                             { return allocate_tree(STAR); }
 "/"                             { return allocate_tree(SLASH); }
-"|"                             {  yytoken = init_token(VBAR, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return VBAR; }
-"&"                             {  yytoken = init_token(AMPER, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return AMPER; }
-"<"                             {  yytoken = init_token(LESS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LESS; }
-">"                             {  yytoken = init_token(GREATER, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return GREATER; }
-"="                             {  yytoken = init_token(EQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return EQUAL; }
-"."                             {  yytoken = init_token(DOT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DOT; }
+"|"                             { return allocate_tree(VBAR); }
+"&"                             { return allocate_tree(AMPER); }
+"<"                             { return allocate_tree(LESS); }
+">"                             { return allocate_tree(GREATER); }
+"="                             { return allocate_tree(EQUAL); }
+"."                             { return allocate_tree(DOT); }
 "%"                             { return allocate_tree(PERCENT); }
-"{"                             {  yytoken = init_token(LBRACE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LBRACE; }
-"}"                             {  yytoken = init_token(RBRACE, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RBRACE; }
-"=="                            {  yytoken = init_token(EQEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return EQEQUAL; }
-"!="                            {  yytoken = init_token(NOTEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return NOTEQUAL; }
-"<="                            {  yytoken = init_token(LESSEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LESSEQUAL; }
-">="                            {  yytoken = init_token(GREATEREQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return GREATEREQUAL; }
+"{"                             { return allocate_tree(LBRACE); }
+"}"                             { return allocate_tree(RBRACE); }
+"=="                            { return allocate_tree(EQEQUAL); }
+"!="                            { return allocate_tree(NOTEQUAL); }
+"<="                            { return allocate_tree(LESSEQUAL); }
+">="                            { return allocate_tree(GREATEREQUAL); }
 "~"                             { return allocate_tree(TILDE); }
-"^"                             {  yytoken = init_token(CIRCUMFLEX, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return CIRCUMFLEX; }
-"<<"                            {  yytoken = init_token(LEFTSHIFT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LEFTSHIFT; }
-">>"                            {  yytoken = init_token(RIGHTSHIFT, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RIGHTSHIFT; }
+"^"                             { return allocate_tree(CIRCUMFLEX); }
+"<<"                            { return allocate_tree(LEFTSHIFT); }
+">>"                            { return allocate_tree(RIGHTSHIFT); }
 "**"                            { return allocate_tree(DOUBLESTAR); }
-"+="                            {  yytoken = init_token(PLUSEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return PLUSEQUAL; }
-"-="                            {  yytoken = init_token(MINEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return MINEQUAL; }
-"*="                            {  yytoken = init_token(STAREQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return STAREQUAL; }
-"/="                            {  yytoken = init_token(SLASHEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return SLASHEQUAL; }
-"%="                            {  yytoken = init_token(PERCENTEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return PERCENTEQUAL; }
-"&="                            {  yytoken = init_token(AMPEREQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return AMPEREQUAL; }
-"|="                            {  yytoken = init_token(VBAREQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return VBAREQUAL; }
-"^="                            {  yytoken = init_token(CIRCUMFLEXEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return CIRCUMFLEXEQUAL; }
-"<<="                           {  yytoken = init_token(LEFTSHIFTEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return LEFTSHIFTEQUAL; }
-">>="                           {  yytoken = init_token(RIGHTSHIFTEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RIGHTSHIFTEQUAL; }
-"**="                           {  yytoken = init_token(DOUBLESTAREQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DOUBLESTAREQUAL; }
+"+="                            { return allocate_tree(PLUSEQUAL); }
+"-="                            { return allocate_tree(MINEQUAL); }
+"*="                            { return allocate_tree(STAREQUAL); }
+"/="                            { return allocate_tree(SLASHEQUAL); }
+"%="                            { return allocate_tree(PERCENTEQUAL); }
+"&="                            { return allocate_tree(AMPEREQUAL); }
+"|="                            { return allocate_tree(VBAREQUAL); }
+"^="                            { return allocate_tree(CIRCUMFLEXEQUAL); }
+"<<="                           { return allocate_tree(LEFTSHIFTEQUAL); }
+">>="                           { return allocate_tree(RIGHTSHIFTEQUAL); }
+"**="                           { return allocate_tree(DOUBLESTAREQUAL); }
 "//"                            { return allocate_tree(DOUBLESLASH); }
-"//="                           {  yytoken = init_token(DOUBLESLASHEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return DOUBLESLASHEQUAL; }
+"//="                           { return allocate_tree(DOUBLESLASHEQUAL); }
 "@"                             { return allocate_tree(AT); }
-"@="                            {  yytoken = init_token(ATEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return ATEQUAL; }
-"->"                            {  yytoken = init_token(RARROW, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return RARROW; }
-"..."                           {  yytoken = init_token(ELLIPSIS, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return ELLIPSIS; }
-":="                            {  yytoken = init_token(COLONEQUAL, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return COLONEQUAL; }
+"@="                            { return allocate_tree(ATEQUAL); }
+"->"                            { return allocate_tree(RARROW); }
+"..."                           { return allocate_tree(ELLIPSIS); }
+":="                            { return allocate_tree(COLONEQUAL); }
 %%
 
 int allocate_tree(int category) {

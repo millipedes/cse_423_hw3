@@ -45,10 +45,9 @@ const char * token_type_to_string(int type);
 %type <ast> decorated decorators del_stmt pass_stmt flow_stmt import_stmt
 %type <ast> global_stmt exec_stmt assert_stmt decorator break_stmt continue_stmt
 %type <ast> return_stmt raise_stmt yield_stmt import_name import_from parameters
-%type <ast> suite
-
-
-%start start
+%type <ast> suite dotted_as_names dotted_name dotted_as_name start file_input
+%type <ast> encoding_decl single_input star_NEWLINE_stmt pick_NEWLINE_stmt
+%type <ast> opt_EQUAL_test star_COMMA_test
 
 %%
 
@@ -117,7 +116,10 @@ varargslist
 	;
 
 opt_EQUAL_test
-	: EQUAL test
+	: EQUAL test {
+                 $1 = add_child($1, $2);
+                 $$ = $1;
+               }
 	| %empty
 	;
 
@@ -156,19 +158,26 @@ simple_stmt
 
 small_stmt
 	: expr_stmt   { debug_tree($1, 0); return NEWLINE; }
-	| print_stmt  { return NEWLINE; }
-	| del_stmt    { return NEWLINE; }
-	| pass_stmt   { return NEWLINE; }
-	| flow_stmt   { return NEWLINE; }
-	| import_stmt { return NEWLINE; }
-	| global_stmt { return NEWLINE; }
-	| exec_stmt   { return NEWLINE; } 
-	| assert_stmt { return NEWLINE; }
+	| print_stmt  { debug_tree($1, 0); return NEWLINE; }
+	| del_stmt    { debug_tree($1, 0); return NEWLINE; }
+	| pass_stmt   { debug_tree($1, 0); return NEWLINE; }
+	| flow_stmt   { debug_tree($1, 0); return NEWLINE; }
+	| import_stmt { debug_tree($1, 0); return NEWLINE; }
+	| global_stmt { debug_tree($1, 0); return NEWLINE; }
+	| exec_stmt   { debug_tree($1, 0); return NEWLINE; } 
+	| assert_stmt { debug_tree($1, 0); return NEWLINE; }
 	;
 
 expr_stmt
 	: testlist augassign pick_yield_expr_testlist
-	| testlist star_EQUAL
+	| testlist star_EQUAL {
+                          if($2) {
+                            $1 = add_child($1, $2);
+                            $$ = $1;
+                          } else {
+                            $$ = $1;
+                          }
+                        }
 	;
 
 pick_yield_expr_testlist
@@ -178,9 +187,14 @@ pick_yield_expr_testlist
 
 star_EQUAL
 	: EQUAL pick_yield_expr_testlist star_EQUAL {
-                                                $1 = add_child($1, $2);
-                                                $1 = add_child($1, $3);
-                                                $$ = $1;
+                                                if($3) {
+                                                  $1 = add_child($1, $2);
+                                                  $1 = add_child($1, $3);
+                                                  $$ = $1;
+                                                } else {
+                                                  $1 = add_child($1, $2);
+                                                  $$ = $1;
+                                                }
                                               }
 	| %empty                                    { $$ = NULL; }
 	;
@@ -272,7 +286,7 @@ import_stmt
 	;
 
 import_name
-	: IMPORT dotted_as_names
+	: IMPORT dotted_as_names { $1 = add_child($1, $2); }
 	;
 
 import_from
@@ -317,7 +331,11 @@ dotted_as_names
 
 dotted_name
 	: NAME
-	| dotted_name DOT NAME
+	| dotted_name DOT NAME {
+                           $1 = add_child($1, $2);
+                           $1 = add_child($1, $3);
+                           $$ = $1;
+                         }
 	;
 
 global_stmt
@@ -336,14 +354,14 @@ assert_stmt
 	;
 
 compound_stmt
-	: if_stmt
-	| while_stmt
-	| for_stmt
-	| try_stmt
-	| with_stmt
-	| funcdef
-	| classdef
-	| decorated
+	: if_stmt      { $$ = $1; }
+	| while_stmt   { $$ = $1; }
+	| for_stmt     { $$ = $1; }
+	| try_stmt     { $$ = $1; }
+	| with_stmt    { $$ = $1; }
+	| funcdef      { $$ = $1; }
+	| classdef     { $$ = $1; }
+	| decorated    { $$ = $1; }
 	;
 
 if_stmt
@@ -580,13 +598,11 @@ power
                                            $3 = add_child($3, $1);
                                            $3 = add_child($3, $4);
                                            $$ = $3;
-                                           // $$ = new ExpNode('^',$1, $4);
                                          }
 	| atom star_trailer
           {
             $$ = $1;
-            printf("HERE\n");
-            exit(1);
+            // exit(1);
             // if($2 == 'c') {
             //   a = new CallNode('2', $1->getKey());
             //   $$ = new CallNode('2',($1)->getKey());
@@ -692,8 +708,8 @@ exprlist
 	;
 
 testlist
-	: test star_COMMA_test 
-	;
+	: test star_COMMA_test
+  ;
 
 dictorsetmaker
 	: test COLON test pick_comp_for
@@ -802,9 +818,18 @@ star_COMMA_fpdef
 	;
 
 star_COMMA_test
-	: COMMA test star_COMMA_test
+	: COMMA test star_COMMA_test {
+                                 if($3) {
+                                   $1 = add_child($1, $2);
+                                   $1 = add_child($1, $3);
+                                   $$ = $1;
+                                 } else {
+                                   $1 = add_child($1, $2);
+                                   $$ = $1;
+                                 }
+                               }
 	| COMMA
-	| %empty
+	| %empty { $$ = NULL; }
 	;
 
 star_test_COLON_test
@@ -937,6 +962,7 @@ const char * token_type_to_string(int type) {
     case CLASS:            return "Class";
     case CONTINUE:         return "Continue";
     case DEF:              return "Def";
+    case PRINT:            return "print";
     case DEL:              return "Del";
     case ELIF:             return "Elif";
     case ELSE:             return "Else";
