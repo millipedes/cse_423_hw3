@@ -48,6 +48,8 @@ const char * token_type_to_string(int type);
 %type <ast> suite
 
 
+%start start
+
 %%
 
 start
@@ -113,6 +115,7 @@ varargslist
 	: star_fpdef_COMMA pick_STAR_DOUBLESTAR
 	| fpdef opt_EQUAL_test star_COMMA_fpdef
 	;
+
 opt_EQUAL_test
 	: EQUAL test
 	| %empty
@@ -152,20 +155,20 @@ simple_stmt
 	;
 
 small_stmt
-	: expr_stmt
-	| print_stmt
-	| del_stmt
-	| pass_stmt
-	| flow_stmt
-	| import_stmt
-	| global_stmt
-	| exec_stmt
-	| assert_stmt
+	: expr_stmt   { debug_tree($1, 0); return NEWLINE; }
+	| print_stmt  { return NEWLINE; }
+	| del_stmt    { return NEWLINE; }
+	| pass_stmt   { return NEWLINE; }
+	| flow_stmt   { return NEWLINE; }
+	| import_stmt { return NEWLINE; }
+	| global_stmt { return NEWLINE; }
+	| exec_stmt   { return NEWLINE; } 
+	| assert_stmt { return NEWLINE; }
 	;
 
 expr_stmt
-	: testlist augassign pick_yield_expr_testlist { }
-	| testlist star_EQUAL                         { $$ = $2; }
+	: testlist augassign pick_yield_expr_testlist
+	| testlist star_EQUAL
 	;
 
 pick_yield_expr_testlist
@@ -252,69 +255,86 @@ raise_stmt
 	: RAISE test opt_test_3
 	| RAISE
 	;
+
 opt_COMMA_test
 	: COMMA test
 	| %empty
 	;
+
 opt_test_3
 	: COMMA test opt_COMMA_test
 	| %empty
 	;
+
 import_stmt
 	: import_name
 	| import_from
 	;
+
 import_name
 	: IMPORT dotted_as_names
 	;
+
 import_from
 	: FROM star_DOT dotted_name IMPORT pick_STAR_import
 	| FROM plus_DOT IMPORT pick_STAR_import
 	;
+
 star_DOT
 	: DOT star_DOT
 	| %empty
 	;
+
 plus_DOT
 	: DOT plus_DOT
 	| DOT
 	;
+
 pick_STAR_import
 	: STAR
 	| LPAR import_as_names RPAR
 	| import_as_names
 	;
+
 import_as_name
 	: NAME AS NAME
 	| NAME
 	;
+
 dotted_as_name
 	: dotted_name AS NAME
 	| dotted_name
 	;
+
 import_as_names
 	: import_as_name star_COMMA_import_as_name
 	;
+
 dotted_as_names
 	: dotted_as_name
 	| dotted_as_names COMMA dotted_as_name
 	;
+
 dotted_name
 	: NAME
 	| dotted_name DOT NAME
 	;
+
 global_stmt
 	: global_stmt COMMA NAME
 	| GLOBAL NAME
 	;
+
 exec_stmt
 	: EXEC expr IN test opt_COMMA_test
 	| EXEC expr
 	;
+
 assert_stmt
 	: ASSERT test COMMA test
 	| ASSERT test
 	;
+
 compound_stmt
 	: if_stmt
 	| while_stmt
@@ -325,61 +345,76 @@ compound_stmt
 	| classdef
 	| decorated
 	;
+
 if_stmt
 	: IF test COLON suite star_ELIF ELSE COLON suite
 	| IF test COLON suite star_ELIF
 	;
+
 star_ELIF
 	: ELIF test COLON suite star_ELIF
 	| %empty
 	;
+
 while_stmt
 	: WHILE test COLON suite ELSE COLON suite
 	| WHILE test COLON suite
 	;
+
 for_stmt
 	: FOR exprlist IN testlist COLON suite ELSE COLON suite
 	| FOR exprlist IN testlist COLON suite
 	;
+
 try_stmt
 	: TRY COLON suite plus_except opt_ELSE opt_FINALLY
 	| TRY COLON suite FINALLY COLON suite
 	;
+
 plus_except
 	: except_clause COLON suite plus_except
 	| except_clause COLON suite
 	;
+
 opt_ELSE
 	: ELSE COLON suite
 	| %empty
 	;
+
 opt_FINALLY
 	: FINALLY COLON suite
 	| %empty
 	;
+
 with_stmt
 	: WITH with_item star_COMMA_with_item COLON suite
 	;
+
 star_COMMA_with_item
 	: COMMA with_item star_COMMA_with_item
 	| %empty
 	;
+
 with_item
 	: test AS expr
 	| test
 	;
+
 except_clause
 	: EXCEPT test opt_AS_COMMA
 	| EXCEPT
 	;
+
 pick_AS_COMMA
 	: AS
 	| COMMA
 	;
+
 opt_AS_COMMA
 	: pick_AS_COMMA test
 	| %empty
 	;
+
 suite
   : simple_stmt 
 	| NEWLINE INDENT {
@@ -395,6 +430,7 @@ plus_stmt
                      //     }
                    }
 	| stmt           { 
+                     $$ = $1;
                      // funcStmt = new std::vector<Ast*>();
                      // if($1 != NULL)
                      // funcStmt->push_back($1);
@@ -424,7 +460,7 @@ test
 
 opt_IF_ELSE
 	: IF or_test ELSE test
-	| %empty { ; }
+	| %empty { }
 	;
 
 or_test
@@ -488,11 +524,11 @@ pick_LEFTSHIFT_RIGHTSHIFT
 
 arith_expr
 	: term
-	| arith_expr pick_PLUS_MINUS term
-          { 
-            // if (char($2) == '+') $$ = new PlusNode($2, $1, $3);
-	          // if (char($2) == '-') $$ = new MinusNode($2, $1, $3);
-          }
+	| arith_expr pick_PLUS_MINUS term {
+                                      $2 = add_child($2, $1);
+                                      $2 = add_child($2, $3);
+                                      $$ = $2;
+                                    }
 	;
 
 pick_PLUS_MINUS
@@ -504,6 +540,9 @@ term
 	: factor
 	| term pick_multop factor
           {
+            $2 = add_child($2, $1);
+            $2 = add_child($2, $3);
+            $$ = $2;
             // if($2 == '*') $$ = new MultNode($2,$1, $3);
             // if($2 == '/') $$ = new DivNode($2,$1, $3);
             // if($2 == '%') $$ = new ModNode($2,$1,$3);
@@ -513,6 +552,7 @@ term
 
 pick_multop
 	: STAR        { $$ = $1; }
+  | AT          { $$ = $1; }
 	| SLASH       { $$ = $1; }
 	| PERCENT     { $$ = $1; }
 	| DOUBLESLASH { $$ = $1; }
@@ -521,6 +561,8 @@ pick_multop
 factor
 	: pick_unop factor
           {
+            $1 = add_child($1, $2);
+            $$ = $1;
             // if(char($1) == '+') $$ = new UPlusNode('P', $2, NULL);
             // if(char($1) == '-') $$ = new UMinusNode('M', $2, NULL);
           }
@@ -530,15 +572,21 @@ factor
 pick_unop
 	: PLUS  { $$ = $1; }
 	| MINUS { $$ = $1; }
-	| TILDE
+	| TILDE { $$ = $1; }
 	;
 
 power
 	: atom star_trailer DOUBLESTAR factor  { 
+                                           $3 = add_child($3, $1);
+                                           $3 = add_child($3, $4);
+                                           $$ = $3;
                                            // $$ = new ExpNode('^',$1, $4);
                                          }
 	| atom star_trailer
           {
+            $$ = $1;
+            printf("HERE\n");
+            exit(1);
             // if($2 == 'c') {
             //   a = new CallNode('2', $1->getKey());
             //   $$ = new CallNode('2',($1)->getKey());
@@ -561,10 +609,13 @@ atom
 	| LSQB opt_listmaker RSQB
 	| LBRACE opt_dictorsetmaker RBRACE
 	| BACKQUOTE testlist1 BACKQUOTE
-	| NAME
+	| NAME   { $$ = $1; }
 	| NUMBER { $$ = $1; }
-	| plus_STRING
+  | TRUE   { $$ = $1; }
+  | FALSE  { $$ = $1; }
+	| plus_STRING { $$ = $1; }
 	;
+
 pick_yield_expr_testlist_comp
 	: yield_expr
 	| testlist_comp
@@ -587,7 +638,7 @@ opt_dictorsetmaker
 
 plus_STRING
 	: STRING plus_STRING
-	| STRING
+	| STRING { $$ = $1; }
 	;
 
 listmaker

@@ -20,8 +20,8 @@ int main(int argc, char * argv[]) {
   g_path_wrapper = init_path_wrapper(argv[1]);
   yyin = fopen(g_path_wrapper->path_file, "r");
   printf("main: %d\n", yyparse());
+  printf("main: %d\n", yyparse());
   free_path_wrapper(g_path_wrapper);
-  free_tree(yylval.ast);
   free_token(yytoken);
   fclose(yyin);
   yylex_destroy();
