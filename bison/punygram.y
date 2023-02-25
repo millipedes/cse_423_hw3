@@ -1,19 +1,4 @@
 %{
-/*
-# Grammar for Python
-
-# NOTE WELL: You should also follow all the steps listed at
-# https://devguide.python.org/grammar/
-
-# Start symbols for the grammar:
-#       single_input is a single interactive statement;
-#       file_input is a module or sequence of commands read from an input file;
-#       eval_input is the input for the eval() functions.
-#       func_type_input is a PEP 484 Python 2 function type comment
-# NB: compound_stmt in single_input is followed by extra NEWLINE!
-# NB: due to the way TYPE_COMMENT is tokenized it will always be followed
-#     by a NEWLINE
-*/
 #include "../file_preprocessing/include/file_preprocessing.h"
 
 extern int yylex();
@@ -22,7 +7,6 @@ extern path_wrapper * g_path_wrapper;
 extern char * yytext;
 
 const char * token_type_to_string(int type);
-
 %}
 
 %code requires {
@@ -34,256 +18,795 @@ const char * token_type_to_string(int type);
   tree * ast;
 }
 
-%token <ast> NAME
-%token <ast> ENDMARKER
-%token <ast> NUMBER
-%token <ast> STRING
-%token <ast> NEWLINE
-%token <ast> INDENT
-%token <ast> DEDENT
-%token <ast> NODENT
-%token <ast> LPAR
-%token <ast> RPAR
-%token <ast> LSQB
-%token <ast> RSQB
-%token <ast> COLON
-%token <ast> COMMA
-%token <ast> SEMI
-%token <ast> PLUS
-%token <ast> MINUS
-%token <ast> STAR
-%token <ast> SLASH
-%token <ast> VBAR
-%token <ast> AMPER
-%token <ast> LESS
-%token <ast> GREATER
-%token <ast> EQUAL
-%token <ast> DOT
-%token <ast> PERCENT
-%token <ast> LBRACE
-%token <ast> RBRACE
-%token <ast> EQEQUAL
-%token <ast> NOTEQUAL
-%token <ast> LESSEQUAL
-%token <ast> GREATEREQUAL
-%token <ast> TILDE
-%token <ast> CIRCUMFLEX
-%token <ast> LEFTSHIFT
-%token <ast> RIGHTSHIFT
-%token <ast> DOUBLESTAR
-%token <ast> PLUSEQUAL
-%token <ast> MINEQUAL
-%token <ast> STAREQUAL
-%token <ast> SLASHEQUAL
-%token <ast> PERCENTEQUAL
-%token <ast> AMPEREQUAL
-%token <ast> VBAREQUAL
-%token <ast> CIRCUMFLEXEQUAL
-%token <ast> LEFTSHIFTEQUAL
-%token <ast> RIGHTSHIFTEQUAL
-%token <ast> DOUBLESTAREQUAL
-%token <ast> DOUBLESLASH
-%token <ast> DOUBLESLASHEQUAL
-%token <ast> AT
-%token <ast> ATEQUAL
-%token <ast> RARROW
-%token <ast> ELLIPSIS
-%token <ast> COLONEQUAL
-%token <ast> OP
-%token <ast> AWAIT
-%token <ast> ASYNC
-%token <ast> TYPE
-%token <ast> TYPE_IGNORE
-%token <ast> TYPE_COMMENT
-%token <ast> ERRORTOKEN
-%token <ast> POUND_TYPE
-%token <ast> COMMENT
-%token <ast> NL
-%token <ast> ENCODING
-%token <ast> FALSE
-%token <ast> NONE
-%token <ast> TRUE
-%token <ast> AND
-%token <ast> AS
-%token <ast> ASSERT
-%token <ast> BREAK
-%token <ast> CLASS
-%token <ast> CONTINUE
-%token <ast> DEF
-%token <ast> DEL
-%token <ast> ELIF
-%token <ast> ELSE
-%token <ast> EXCEPT
-%token <ast> FINALLY
-%token <ast> FOR
-%token <ast> FROM
-%token <ast> IF
-%token <ast> IMPORT
-%token <ast> IN
-%token <ast> IS
-%token <ast> LAMBDA
-%token <ast> NONLOCAL
-%token <ast> NOT
-%token <ast> OR
-%token <ast> GLOBAL
-%token <ast> RAISE
-%token <ast> RETURN
-%token <ast> TRY
-%token <ast> WHILE
-%token <ast> WITH
-%token <ast> YIELD
-%token <ast> PASS
+%token <ast> AMPEREQUAL AMPERSAND AND AS ASSERT AT BAR BREAK
+%token <ast> CIRCUMFLEX CIRCUMFLEXEQUAL CLASS COLON COMMA CONTINUE DEDENT
+%token <ast> DEF DEL DOT DOUBLESLASH DOUBLESLASHEQUAL 
+%token <ast> DOUBLESTAR DOUBLESTAREQUAL ELIF ELSE ENDMARKER EQEQUAL
+%token <ast> EQUAL EXCEPT EXEC FINALLY FOR FROM GLOBAL GREATER GREATEREQUAL GRLT
+%token <ast> IF IMPORT IN INDENT IS LEFTSHIFT LEFTSHIFTEQUAL LESS
+%token <ast> LESSEQUAL LPAR MINUS MINEQUAL NEWLINE NOTEQUAL
+%token <ast> OR PASS PERCENT PERCENTEQUAL PLUS PLUSEQUAL PRINT RAISE 
+%token <ast> RBRACE RETURN RIGHTSHIFT RIGHTSHIFTEQUAL RPAR RSQB 
+%token <ast> SEMI SLASH SLASHEQUAL STAR STAREQUAL
+%token <ast> TRY VBAREQUAL WHILE WITH
+%token <ast> LSQB LBRACE BACKQUOTE STRING LAMBDA YIELD NOT NUMBER NAME
+%token <ast> TILDE NODENT VBAR AMPER ATEQUAL RARROW ELLIPSIS COLONEQUAL OP
+%token <ast> AWAIT ASYNC TYPE TYPE_IGNORE TYPE_COMMENT ERRORTOKEN COMMENT
+%token <ast> POUND_TYPE NL ENCODING NONE FALSE TRUE NONLOCAL
 
-%type <ast> file_input arith_expr terms term factors factor atom
+%type <ast> pick_PLUS_MINUS pick_multop pick_unop augassign star_trailer
+%type <ast> print_stmt arith_expr term factor power atom opt_test opt_yield_test
+%type <ast> star_EQUAL pick_yield_expr_testlist yield_expr testlist test
+%type <ast> opt_test_2 plus_COMMA_test or_test opt_IF_ELSE lambdef
+%type <ast> plus_STRING pick_yield_expr_testlist_comp and_test testlist_comp
+%type <ast> not_test comparison expr xor_expr and_expr shift_expr
+%type <ast> plus_stmt stmt expr_stmt simple_stmt compound_stmt small_stmt
+%type <ast> if_stmt while_stmt for_stmt try_stmt with_stmt funcdef classdef
+%type <ast> decorated decorators del_stmt pass_stmt flow_stmt import_stmt
+%type <ast> global_stmt exec_stmt assert_stmt decorator break_stmt continue_stmt
+%type <ast> return_stmt raise_stmt yield_stmt import_name import_from parameters
+%type <ast> suite
 
-%left PLUS MINUS STAR SLASH
 
 %%
+
+start
+	: file_input    { return ENDMARKER; }
+	| encoding_decl { return ENDMARKER; }
+	| single_input  { return ENDMARKER; }
+	;
+
+single_input
+	: NEWLINE
+	| stmt
+	;
 
 file_input
-  : arith_expr { debug_tree($$, 0); return ENDMARKER; }
-  | ENDMARKER { return ENDMARKER; }
-  ;
+	: star_NEWLINE_stmt ENDMARKER
+	;
+
+pick_NEWLINE_stmt
+	: NEWLINE
+	| stmt
+	;
+
+star_NEWLINE_stmt
+	: pick_NEWLINE_stmt star_NEWLINE_stmt
+	| %empty
+	;
+
+decorator
+	: AT dotted_name LPAR opt_arglist RPAR NEWLINE
+	| AT dotted_name NEWLINE
+	;
+
+opt_arglist
+	: arglist
+	| %empty
+	;
+
+decorators
+	: decorator decorators
+	| decorator
+	;
+
+decorated
+	: decorators classdef
+	| decorators funcdef
+	;
+
+funcdef
+	: DEF NAME parameters COLON suite {
+                                      $1 = add_child($1, $2);
+                                      $1 = add_child($1, $3);
+                                      $1 = add_child($1, $4);
+                                      $1 = add_child($1, $5);
+                                    }
+	;
+
+parameters
+	: LPAR varargslist RPAR
+	| LPAR RPAR
+	;
+
+varargslist
+	: star_fpdef_COMMA pick_STAR_DOUBLESTAR
+	| fpdef opt_EQUAL_test star_COMMA_fpdef
+	;
+opt_EQUAL_test
+	: EQUAL test
+	| %empty
+	;
+
+star_fpdef_COMMA
+	: fpdef opt_EQUAL_test COMMA star_fpdef_COMMA
+	| %empty
+	;
+
+opt_DOUBLESTAR_NAME
+	: COMMA DOUBLESTAR NAME
+	| %empty
+	;
+
+pick_STAR_DOUBLESTAR
+	: STAR NAME opt_DOUBLESTAR_NAME
+	| DOUBLESTAR NAME
+	;
+
+fpdef
+	: NAME
+	| LPAR fplist RPAR
+	;
+
+fplist
+	: fpdef star_fpdef_notest
+	;
+
+stmt
+	: simple_stmt
+	| compound_stmt
+	;
+
+simple_stmt
+	: small_stmt small_stmt_STAR_OR_SEMI NEWLINE
+	;
+
+small_stmt
+	: expr_stmt
+	| print_stmt
+	| del_stmt
+	| pass_stmt
+	| flow_stmt
+	| import_stmt
+	| global_stmt
+	| exec_stmt
+	| assert_stmt
+	;
+
+expr_stmt
+	: testlist augassign pick_yield_expr_testlist { }
+	| testlist star_EQUAL                         { $$ = $2; }
+	;
+
+pick_yield_expr_testlist
+	: yield_expr 
+	| testlist
+	;
+
+star_EQUAL
+	: EQUAL pick_yield_expr_testlist star_EQUAL {
+                                                $1 = add_child($1, $2);
+                                                $1 = add_child($1, $3);
+                                                $$ = $1;
+                                              }
+	| %empty                                    { $$ = NULL; }
+	;
+
+augassign
+	: PLUSEQUAL		     { }
+	| MINEQUAL		     { }
+	| STAREQUAL		     { }
+	| SLASHEQUAL		   { }
+	| PERCENTEQUAL     { }
+	| AMPEREQUAL		   { }
+	| VBAREQUAL		     { }
+	| CIRCUMFLEXEQUAL	 { }
+	| LEFTSHIFTEQUAL	 { }
+	| RIGHTSHIFTEQUAL	 { }
+	| DOUBLESTAREQUAL	 { }
+	| DOUBLESLASHEQUAL { }
+	;
+
+print_stmt
+	: PRINT opt_test {
+                     $1 = add_child($1, $2);
+                     $$ = $1;
+                   }
+	| PRINT RIGHTSHIFT test opt_test_2
+	;
+
+opt_test
+	: test star_COMMA_test
+	| %empty { }
+	;
+
+opt_test_2
+	: plus_COMMA_test
+	| %empty { }
+	;
+
+del_stmt
+	: DEL exprlist
+	;
+
+pass_stmt
+	: PASS
+	;
+
+flow_stmt
+	: break_stmt
+	| continue_stmt
+	| return_stmt
+	| raise_stmt
+	| yield_stmt
+	;
+
+break_stmt
+	: BREAK
+	;
+
+continue_stmt
+	: CONTINUE
+	;
+
+return_stmt
+	: RETURN testlist
+	| RETURN
+	;
+
+yield_stmt
+	: yield_expr
+	;
+
+raise_stmt
+	: RAISE test opt_test_3
+	| RAISE
+	;
+opt_COMMA_test
+	: COMMA test
+	| %empty
+	;
+opt_test_3
+	: COMMA test opt_COMMA_test
+	| %empty
+	;
+import_stmt
+	: import_name
+	| import_from
+	;
+import_name
+	: IMPORT dotted_as_names
+	;
+import_from
+	: FROM star_DOT dotted_name IMPORT pick_STAR_import
+	| FROM plus_DOT IMPORT pick_STAR_import
+	;
+star_DOT
+	: DOT star_DOT
+	| %empty
+	;
+plus_DOT
+	: DOT plus_DOT
+	| DOT
+	;
+pick_STAR_import
+	: STAR
+	| LPAR import_as_names RPAR
+	| import_as_names
+	;
+import_as_name
+	: NAME AS NAME
+	| NAME
+	;
+dotted_as_name
+	: dotted_name AS NAME
+	| dotted_name
+	;
+import_as_names
+	: import_as_name star_COMMA_import_as_name
+	;
+dotted_as_names
+	: dotted_as_name
+	| dotted_as_names COMMA dotted_as_name
+	;
+dotted_name
+	: NAME
+	| dotted_name DOT NAME
+	;
+global_stmt
+	: global_stmt COMMA NAME
+	| GLOBAL NAME
+	;
+exec_stmt
+	: EXEC expr IN test opt_COMMA_test
+	| EXEC expr
+	;
+assert_stmt
+	: ASSERT test COMMA test
+	| ASSERT test
+	;
+compound_stmt
+	: if_stmt
+	| while_stmt
+	| for_stmt
+	| try_stmt
+	| with_stmt
+	| funcdef
+	| classdef
+	| decorated
+	;
+if_stmt
+	: IF test COLON suite star_ELIF ELSE COLON suite
+	| IF test COLON suite star_ELIF
+	;
+star_ELIF
+	: ELIF test COLON suite star_ELIF
+	| %empty
+	;
+while_stmt
+	: WHILE test COLON suite ELSE COLON suite
+	| WHILE test COLON suite
+	;
+for_stmt
+	: FOR exprlist IN testlist COLON suite ELSE COLON suite
+	| FOR exprlist IN testlist COLON suite
+	;
+try_stmt
+	: TRY COLON suite plus_except opt_ELSE opt_FINALLY
+	| TRY COLON suite FINALLY COLON suite
+	;
+plus_except
+	: except_clause COLON suite plus_except
+	| except_clause COLON suite
+	;
+opt_ELSE
+	: ELSE COLON suite
+	| %empty
+	;
+opt_FINALLY
+	: FINALLY COLON suite
+	| %empty
+	;
+with_stmt
+	: WITH with_item star_COMMA_with_item COLON suite
+	;
+star_COMMA_with_item
+	: COMMA with_item star_COMMA_with_item
+	| %empty
+	;
+with_item
+	: test AS expr
+	| test
+	;
+except_clause
+	: EXCEPT test opt_AS_COMMA
+	| EXCEPT
+	;
+pick_AS_COMMA
+	: AS
+	| COMMA
+	;
+opt_AS_COMMA
+	: pick_AS_COMMA test
+	| %empty
+	;
+suite
+  : simple_stmt 
+	| NEWLINE INDENT {
+                     // TableManager::getInstance().incrScope();
+                   } plus_stmt DEDENT
+	;
+
+plus_stmt
+	: stmt plus_stmt {
+                     // if($1 != NULL)
+                     //       funcStmt->push_back($1);
+                     //       else funcStmt->push_back(a);
+                     //     }
+                   }
+	| stmt           { 
+                     // funcStmt = new std::vector<Ast*>();
+                     // if($1 != NULL)
+                     // funcStmt->push_back($1);
+                     // else funcStmt->push_back(a);
+                   }
+	;
+
+testlist_safe
+	: old_test plus_COMMA_old_test
+	| old_test
+	;
+
+old_test
+	: or_test
+	| old_lambdef
+	;
+
+old_lambdef
+	: LAMBDA varargslist COLON old_test
+	| LAMBDA COLON old_test
+	;
+
+test
+	: or_test opt_IF_ELSE
+	| lambdef
+	;
+
+opt_IF_ELSE
+	: IF or_test ELSE test
+	| %empty { ; }
+	;
+
+or_test
+	: and_test
+	| or_test OR and_test
+	;
+
+and_test
+	: not_test
+	| and_test AND not_test
+	;
+
+not_test
+	: NOT not_test
+	| comparison
+	;
+
+comparison
+	: expr
+	| comparison comp_op expr
+	;
+
+comp_op
+	: LESS
+	| GREATER
+	| EQEQUAL
+	| GREATEREQUAL
+	| LESSEQUAL
+	| GRLT
+	| NOTEQUAL
+	| IN
+	| NOT IN
+	| IS
+	| IS NOT
+	;
+
+expr
+	: xor_expr
+	| expr BAR xor_expr
+	;
+
+xor_expr
+	: and_expr
+	| xor_expr CIRCUMFLEX and_expr
+	;
+
+and_expr
+	: shift_expr
+	| and_expr AMPERSAND shift_expr
+	;
+
+shift_expr
+	: arith_expr
+	| shift_expr pick_LEFTSHIFT_RIGHTSHIFT arith_expr
+	;
+
+pick_LEFTSHIFT_RIGHTSHIFT
+	: LEFTSHIFT
+	| RIGHTSHIFT
+	;
 
 arith_expr
-  : term
-  | term PLUS terms {
-                     $2 = add_child($2, $1);
-                     $2 = add_child($2, $3);
-                     $$ = $2;
-                   }
-  | term MINUS terms {
-                     $2 = add_child($2, $1);
-                     $2 = add_child($2, $3);
-                     $$ = $2;
-                   }
-  ;
+	: term
+	| arith_expr pick_PLUS_MINUS term
+          { 
+            // if (char($2) == '+') $$ = new PlusNode($2, $1, $3);
+	          // if (char($2) == '-') $$ = new MinusNode($2, $1, $3);
+          }
+	;
 
-terms
-  : term
-  | terms PLUS term {
-                     $2 = add_child($2, $1);
-                     $2 = add_child($2, $3);
-                     $$ = $2;
-                   }
-  | terms MINUS term {
-                     $2 = add_child($2, $1);
-                     $2 = add_child($2, $3);
-                     $$ = $2;
-                   }
-  ;
+pick_PLUS_MINUS
+	: PLUS  {  $$ = $1; }
+	| MINUS {  $$ = $1; }
+	;
 
 term
-  : factor      { $$ = $1; }
-  | factor STAR factors {
-                          $2 = add_child($2, $1);
-                          $2 = add_child($2, $3);
-                          $$ = $2;
-                        }
-  | factor SLASH factors  {
-                            $2 = add_child($2, $1);
-                            $2 = add_child($2, $3);
-                            $$ = $2;
-                          }
-  | factor DOUBLESLASH factors  {
-                            $2 = add_child($2, $1);
-                            $2 = add_child($2, $3);
-                            $$ = $2;
-                          }
-  | factor PERCENT factors  {
-                            $2 = add_child($2, $1);
-                            $2 = add_child($2, $3);
-                            $$ = $2;
-                          }
-  | factor AT factors {
-                        $2 = add_child($2, $1);
-                        $2 = add_child($2, $3);
-                        $$ = $2;
-                      }
-  ;
+	: factor
+	| term pick_multop factor
+          {
+            // if($2 == '*') $$ = new MultNode($2,$1, $3);
+            // if($2 == '/') $$ = new DivNode($2,$1, $3);
+            // if($2 == '%') $$ = new ModNode($2,$1,$3);
+            // if($2 == '!') $$ = new IntDivNode($2,$1, $3);
+          }
+	;
 
-factors
-  : factor
-  | factors STAR factor {
-                         $2 = add_child($2, $1);
-                         $2 = add_child($2, $3);
-                         $$ = $2;
-                        }
-  | factors AT factor {
-                         $2 = add_child($2, $1);
-                         $2 = add_child($2, $3);
-                         $$ = $2;
-                        }
-  | factors SLASH factor {
-                         $2 = add_child($2, $1);
-                         $2 = add_child($2, $3);
-                         $$ = $2;
-                        }
-  | factor DOUBLESLASH factor  {
-                            $2 = add_child($2, $1);
-                            $2 = add_child($2, $3);
-                            $$ = $2;
-                          }
-  | factor PERCENT factor  {
-                            $2 = add_child($2, $1);
-                            $2 = add_child($2, $3);
-                            $$ = $2;
-                          }
-  ;
+pick_multop
+	: STAR        { $$ = $1; }
+	| SLASH       { $$ = $1; }
+	| PERCENT     { $$ = $1; }
+	| DOUBLESLASH { $$ = $1; }
+	;
 
 factor
-  : PLUS factor  { $$ = add_child($1, $2); }
-  | TILDE factor { $$ = add_child($1, $2); }
-  | MINUS factor { $$ = add_child($1, $2); }
-  | power
-  | atom { $$ = $1; }
-  ;
+	: pick_unop factor
+          {
+            // if(char($1) == '+') $$ = new UPlusNode('P', $2, NULL);
+            // if(char($1) == '-') $$ = new UMinusNode('M', $2, NULL);
+          }
+	| power
+	;
+
+pick_unop
+	: PLUS  { $$ = $1; }
+	| MINUS { $$ = $1; }
+	| TILDE
+	;
 
 power
-  : atom DOUBLESTAR factor
-  ;
+	: atom star_trailer DOUBLESTAR factor  { 
+                                           // $$ = new ExpNode('^',$1, $4);
+                                         }
+	| atom star_trailer
+          {
+            // if($2 == 'c') {
+            //   a = new CallNode('2', $1->getKey());
+            //   $$ = new CallNode('2',($1)->getKey());
+            //   if(TableManager::getInstance().getCurrScope() == 0)
+            //   $$->eval();
+            //   delete $$;
+            // }
+          } 
+	;
+
+star_trailer
+	: trailer star_trailer {
+                           // $$ = 'c';
+                         }
+	| %empty { }
+	;
 
 atom
-  : NUMBER { $$ = $1; }
-  ;
+	: LPAR opt_yield_test RPAR { $$ = $2; }
+	| LSQB opt_listmaker RSQB
+	| LBRACE opt_dictorsetmaker RBRACE
+	| BACKQUOTE testlist1 BACKQUOTE
+	| NAME
+	| NUMBER { $$ = $1; }
+	| plus_STRING
+	;
+pick_yield_expr_testlist_comp
+	: yield_expr
+	| testlist_comp
+	;
+
+opt_yield_test
+	: pick_yield_expr_testlist_comp
+	| %empty { }
+	;
+
+opt_listmaker
+	: listmaker
+	| %empty
+	;
+
+opt_dictorsetmaker
+	: dictorsetmaker
+	| %empty
+	;
+
+plus_STRING
+	: STRING plus_STRING
+	| STRING
+	;
+
+listmaker
+	: test list_for
+	| test star_COMMA_test
+	;
+
+testlist_comp
+	: test comp_for
+	| test star_COMMA_test
+	;
+
+lambdef
+	: LAMBDA varargslist COLON test
+	| LAMBDA COLON test
+	;
+
+trailer
+	: LPAR opt_arglist RPAR
+	| LSQB subscriptlist RSQB
+	| DOT NAME
+	;
+
+subscriptlist
+	: subscript star_COMMA_subscript
+	;
+
+subscript
+	: DOT DOT DOT
+	| test
+	| opt_test_only COLON opt_test_only opt_sliceop
+	;
+
+opt_test_only
+	: test
+	| %empty
+	;
+
+opt_sliceop
+	: sliceop
+	| %empty
+	;
+
+sliceop
+	: COLON test
+	| COLON
+	;
+
+exprlist
+	: expr star_COMMA_expr
+	;
+
+testlist
+	: test star_COMMA_test 
+	;
+
+dictorsetmaker
+	: test COLON test pick_comp_for
+	| test pick_for_test
+	;
+
+pick_comp_for
+	: comp_for
+	| star_test_COLON_test
+	;
+
+pick_for_test
+	: comp_for
+	| star_COMMA_test
+	;
+
+classdef
+	: CLASS NAME LPAR opt_testlist RPAR COLON suite
+	| CLASS NAME COLON suite
+	;
+
+opt_testlist
+	: testlist
+	| %empty
+	;
+
+arglist
+	: argument COMMA arglist
+	| argument COMMA
+	| argument
+	| listarg COMMA arglist_postlist
+	| listarg
+	| dictarg
+	;
+
+argument
+	: test opt_comp_for
+	| test EQUAL test
+	;
+
+opt_comp_for
+	: comp_for
+	| %empty
+	;
+
+list_iter
+	: list_for
+	| list_if
+	;
+
+list_for
+	: FOR exprlist IN testlist_safe list_iter
+	| FOR exprlist IN testlist_safe
+	;
+
+list_if
+	: IF old_test list_iter
+	| IF old_test
+	;
+
+comp_iter
+	: comp_for
+	| comp_if
+	;
+
+comp_for
+	: FOR exprlist IN or_test comp_iter
+	| FOR exprlist IN or_test
+	;
+
+comp_if
+	: IF old_test comp_iter
+	| IF old_test
+	;
+
+testlist1
+	: test
+	| testlist1 COMMA test
+	;
+
+encoding_decl
+	: NAME
+	;
+
+yield_expr
+	: YIELD testlist
+	| YIELD
+	;
+
+star_fpdef_notest
+	: COMMA fpdef star_fpdef_notest
+	| COMMA
+	| %empty
+	;
+
+star_COMMA_expr
+	: COMMA expr star_COMMA_expr
+	| COMMA
+	| %empty
+	;
+
+star_COMMA_fpdef
+	: COMMA fpdef opt_EQUAL_test star_COMMA_fpdef
+	| COMMA
+	| %empty
+	;
+
+star_COMMA_test
+	: COMMA test star_COMMA_test
+	| COMMA
+	| %empty
+	;
+
+star_test_COLON_test
+	: COMMA test COLON test star_test_COLON_test
+	| COMMA
+	| %empty
+	;
+
+star_COMMA_subscript
+	: COMMA subscript star_COMMA_subscript
+	| COMMA
+	| %empty
+	;
+
+star_COMMA_import_as_name
+	: COMMA import_as_name star_COMMA_import_as_name
+	| COMMA
+	| %empty
+	;
+
+plus_COMMA_test
+	: COMMA test plus_COMMA_test
+	| COMMA test COMMA
+	| COMMA test
+	;
+
+plus_COMMA_old_test
+	: COMMA old_test plus_COMMA_old_test
+	| COMMA old_test COMMA
+	| COMMA old_test
+	;
+
+dictarg
+	: DOUBLESTAR test
+	;
+
+listarg
+	: STAR test
+	;
+
+arglist_postlist
+	: argument COMMA arglist_postlist
+	| dictarg
+	| argument
+	;
+
+small_stmt_STAR_OR_SEMI
+	: SEMI small_stmt small_stmt_STAR_OR_SEMI
+	| SEMI
+	| %empty
+	;
 
 %%
-/*
-file_input: (NEWLINE | stmt)* ENDMARKER
-stmt: simple_stmt | compound_stmt
-  simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-    small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
-      expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) | [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
-        yield_expr: 'yield' [yield_arg]
-        testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
-          star_expr: '*' expr
-            expr: xor_expr ('|' xor_expr)*
-              xor_expr: and_expr ('^' and_expr)*
-                and_expr: shift_expr ('&' shift_expr)*
-                  shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-                    arith_expr: term (('+'|'-') term)*
-                      term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-                        factor: ('+'|'-'|'~') factor | power
-                          power: atom_expr ['**' factor]
-                            atom_expr: [AWAIT] atom trailer*
-                              atom: ('(' [yield_expr|testlist_comp] ')' | '[' [testlist_comp] ']' | '{' [dictorsetmaker] '}' | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-                                dictorsetmaker: ( ((test ':' test | '**' expr) (comp_for | (',' (test ':' test | '**' expr))* [','])) | ((test | star_expr) (comp_for | (',' (test | star_expr))* [','])) )
-                                testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
-                                  namedexpr_test: test [':=' test]
-                                    test: or_test ['if' or_test 'else' test] | lambdef
-                                      lambdef: 'lambda' [varargslist] ':' test
-                                  comp_for: [ASYNC] sync_comp_for
-                                    sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
-                                      exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
-                              trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-                                subscriptlist: subscript (',' subscript)* [',']
-                                  subscript: test | [test] ':' [test] [sliceop]
-                                    sliceop: ':' [test]
-        testlist: test (',' test)* [',']
-        annassign: ':' test ['=' (yield_expr|testlist_star_expr)]
-        augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
-        testlist: test (',' test)* [',']
-*/
 
 const char * token_type_to_string(int type) {
   switch(type) {
@@ -389,250 +912,3 @@ const char * token_type_to_string(int type) {
   }
   return NULL;
 }
-
-/*
-
-##############
-#  COMPLETE  #
-##############
-
-##############
-#   PARTIAL  #
-##############
-file_input: (NEWLINE | stmt)* ENDMARKER
-stmt: simple_stmt | compound_stmt
-  simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-    small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
-      expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) | [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
-        yield_expr: 'yield' [yield_arg]
-        testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
-          star_expr: '*' expr
-            expr: xor_expr ('|' xor_expr)*
-              xor_expr: and_expr ('^' and_expr)*
-                and_expr: shift_expr ('&' shift_expr)*
-                  shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-                    arith_expr: term (('+'|'-') term)*
-                      term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-                        factor: ('+'|'-'|'~') factor | power
-                          power: atom_expr ['**' factor]
-                            atom_expr: [AWAIT] atom trailer*
-                              atom: ('(' [yield_expr|testlist_comp] ')' | '[' [testlist_comp] ']' | '{' [dictorsetmaker] '}' | NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-                                dictorsetmaker: ( ((test ':' test | '**' expr) (comp_for | (',' (test ':' test | '**' expr))* [','])) | ((test | star_expr) (comp_for | (',' (test | star_expr))* [','])) )
-                                testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
-                                  namedexpr_test: test [':=' test]
-                                    test: or_test ['if' or_test 'else' test] | lambdef
-                                      lambdef: 'lambda' [varargslist] ':' test
-                                  comp_for: [ASYNC] sync_comp_for
-                                    sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
-                                      exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
-                              trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-                                subscriptlist: subscript (',' subscript)* [',']
-                                  subscript: test | [test] ':' [test] [sliceop]
-                                    sliceop: ':' [test]
-        testlist: test (',' test)* [',']
-        annassign: ':' test ['=' (yield_expr|testlist_star_expr)]
-        augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' | '<<=' | '>>=' | '**=' | '//=')
-        testlist: test (',' test)* [',']
-
-
-##############
-# INCOMPLETE #
-##############
-
-single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
-file_input: (NEWLINE | stmt)* ENDMARKER
-eval_input: testlist NEWLINE* ENDMARKER
-
-decorator: '@' namedexpr_test NEWLINE
-decorators: decorator+
-decorated: decorators (classdef | funcdef | async_funcdef)
-
-async_funcdef: ASYNC funcdef
-funcdef: 'def' NAME parameters ['->' test] ':' [TYPE_COMMENT] func_body_suite
-
-parameters: '(' [typedargslist] ')'
-
-# The following definition for typedarglist is equivalent to this set of rules:
-#
-#     arguments = argument (',' [TYPE_COMMENT] argument)*
-#     argument = tfpdef ['=' test]
-#     kwargs = '**' tfpdef [','] [TYPE_COMMENT]
-#     args = '*' [tfpdef]
-#     kwonly_kwargs = (',' [TYPE_COMMENT] argument)* (TYPE_COMMENT | [',' [TYPE_COMMENT] [kwargs]])
-#     args_kwonly_kwargs = args kwonly_kwargs | kwargs
-#     poskeyword_args_kwonly_kwargs = arguments ( TYPE_COMMENT | [',' [TYPE_COMMENT] [args_kwonly_kwargs]])
-#     typedargslist_no_posonly  = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
-#     typedarglist = (arguments ',' [TYPE_COMMENT] '/' [',' [[TYPE_COMMENT] typedargslist_no_posonly]])|(typedargslist_no_posonly)"
-#
-# It needs to be fully expanded to allow our LL(1) parser to work on it.
-
-typedargslist: (
-  (tfpdef ['=' test] (',' [TYPE_COMMENT] tfpdef ['=' test])* ',' [TYPE_COMMENT] '/' [',' [ [TYPE_COMMENT] tfpdef ['=' test] (
-        ',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [
-        '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]])
-      | '**' tfpdef [','] [TYPE_COMMENT]]])
-  | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]])
-  | '**' tfpdef [','] [TYPE_COMMENT]]] )
-|  (tfpdef ['=' test] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] [
-   '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]])
-  | '**' tfpdef [','] [TYPE_COMMENT]]])
-  | '*' [tfpdef] (',' [TYPE_COMMENT] tfpdef ['=' test])* (TYPE_COMMENT | [',' [TYPE_COMMENT] ['**' tfpdef [','] [TYPE_COMMENT]]])
-  | '**' tfpdef [','] [TYPE_COMMENT])
-)
-tfpdef: NAME [':' test]
-
-# The following definition for varargslist is equivalent to this set of rules:
-#
-#     arguments = argument (',' argument )*
-#     argument = vfpdef ['=' test]
-#     kwargs = '**' vfpdef [',']
-#     args = '*' [vfpdef]
-#     kwonly_kwargs = (',' argument )* [',' [kwargs]]
-#     args_kwonly_kwargs = args kwonly_kwargs | kwargs
-#     poskeyword_args_kwonly_kwargs = arguments [',' [args_kwonly_kwargs]]
-#     vararglist_no_posonly = poskeyword_args_kwonly_kwargs | args_kwonly_kwargs
-#     varargslist = arguments ',' '/' [','[(vararglist_no_posonly)]] | (vararglist_no_posonly)
-#
-# It needs to be fully expanded to allow our LL(1) parser to work on it.
-
-varargslist: vfpdef ['=' test ](',' vfpdef ['=' test])* ',' '/' [',' [ (vfpdef ['=' test] (',' vfpdef ['=' test])* [',' [
-        '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-      | '**' vfpdef [',']]]
-  | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-  | '**' vfpdef [',']) ]] | (vfpdef ['=' test] (',' vfpdef ['=' test])* [',' [
-        '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-      | '**' vfpdef [',']]]
-  | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
-  | '**' vfpdef [',']
-)
-vfpdef: NAME
-
-stmt: simple_stmt | compound_stmt
-simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-small_stmt: (expr_stmt | del_stmt | pass_stmt | flow_stmt |
-             import_stmt | global_stmt | nonlocal_stmt | assert_stmt)
-expr_stmt: testlist_star_expr (annassign | augassign (yield_expr|testlist) |
-                     [('=' (yield_expr|testlist_star_expr))+ [TYPE_COMMENT]] )
-annassign: ':' test ['=' (yield_expr|testlist_star_expr)]
-testlist_star_expr: (test|star_expr) (',' (test|star_expr))* [',']
-augassign: ('+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^=' |
-            '<<=' | '>>=' | '**=' | '//=')
-# For normal and annotated assignments, additional restrictions enforced by the interpreter
-del_stmt: 'del' exprlist
-pass_stmt: 'pass'
-flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt | yield_stmt
-break_stmt: 'break'
-continue_stmt: 'continue'
-return_stmt: 'return' [testlist_star_expr]
-yield_stmt: yield_expr
-raise_stmt: 'raise' [test ['from' test]]
-import_stmt: import_name | import_from
-import_name: 'import' dotted_as_names
-# note below: the ('.' | '...') is necessary because '...' is tokenized as ELLIPSIS
-import_from: ('from' (('.' | '...')* dotted_name | ('.' | '...')+)
-              'import' ('*' | '(' import_as_names ')' | import_as_names))
-import_as_name: NAME ['as' NAME]
-dotted_as_name: dotted_name ['as' NAME]
-import_as_names: import_as_name (',' import_as_name)* [',']
-dotted_as_names: dotted_as_name (',' dotted_as_name)*
-dotted_name: NAME ('.' NAME)*
-global_stmt: 'global' NAME (',' NAME)*
-nonlocal_stmt: 'nonlocal' NAME (',' NAME)*
-assert_stmt: 'assert' test [',' test]
-
-compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
-async_stmt: ASYNC (funcdef | with_stmt | for_stmt)
-if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)* ['else' ':' suite]
-while_stmt: 'while' namedexpr_test ':' suite ['else' ':' suite]
-for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite ['else' ':' suite]
-try_stmt: ('try' ':' suite
-           ((except_clause ':' suite)+
-            ['else' ':' suite]
-            ['finally' ':' suite] |
-           'finally' ':' suite))
-with_stmt: 'with' with_item (',' with_item)*  ':' [TYPE_COMMENT] suite
-with_item: test ['as' expr]
-# NB compile.c makes sure that the default except clause is last
-except_clause: 'except' [test ['as' NAME]]
-suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
-
-namedexpr_test: test [':=' test]
-test: or_test ['if' or_test 'else' test] | lambdef
-test_nocond: or_test | lambdef_nocond
-lambdef: 'lambda' [varargslist] ':' test
-lambdef_nocond: 'lambda' [varargslist] ':' test_nocond
-or_test: and_test ('or' and_test)*
-and_test: not_test ('and' not_test)*
-not_test: 'not' not_test | comparison
-comparison: expr (comp_op expr)*
-# <> isn't actually a valid comparison operator in Python. It's here for the
-# sake of a __future__ import described in PEP 401 (which really works :-)
-comp_op: '<'|'>'|'=='|'>='|'<='|'<>'|'!='|'in'|'not' 'in'|'is'|'is' 'not'
-star_expr: '*' expr
-expr: xor_expr ('|' xor_expr)*
-xor_expr: and_expr ('^' and_expr)*
-and_expr: shift_expr ('&' shift_expr)*
-shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-arith_expr: term (('+'|'-') term)*
-term: factor (('*'|'@'|'/'|'%'|'//') factor)*
-factor: ('+'|'-'|'~') factor | power
-power: atom_expr ['**' factor]
-atom_expr: [AWAIT] atom trailer*
-atom: ('(' [yield_expr|testlist_comp] ')' |
-       '[' [testlist_comp] ']' |
-       '{' [dictorsetmaker] '}' |
-       NAME | NUMBER | STRING+ | '...' | 'None' | 'True' | 'False')
-testlist_comp: (namedexpr_test|star_expr) ( comp_for | (',' (namedexpr_test|star_expr))* [','] )
-trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-subscriptlist: subscript (',' subscript)* [',']
-subscript: test | [test] ':' [test] [sliceop]
-sliceop: ':' [test]
-exprlist: (expr|star_expr) (',' (expr|star_expr))* [',']
-testlist: test (',' test)* [',']
-dictorsetmaker: ( ((test ':' test | '**' expr)
-                   (comp_for | (',' (test ':' test | '**' expr))* [','])) |
-                  ((test | star_expr)
-                   (comp_for | (',' (test | star_expr))* [','])) )
-
-classdef: 'class' NAME ['(' [arglist] ')'] ':' suite
-
-arglist: argument (',' argument)*  [',']
-
-# The reason that keywords are test nodes instead of NAME is that using NAME
-# results in an ambiguity. ast.c makes sure it's a NAME.
-# "test '=' test" is really "keyword '=' test", but we have no such token.
-# These need to be in a single rule to avoid grammar that is ambiguous
-# to our LL(1) parser. Even though 'test' includes '*expr' in star_expr,
-# we explicitly match '*' here, too, to give it proper precedence.
-# Illegal combinations and orderings are blocked in ast.c:
-# multiple (test comp_for) arguments are blocked; keyword unpackings
-# that precede iterable unpackings are blocked; etc.
-argument: ( test [comp_for] |
-            test ':=' test |
-            test '=' test |
-            '**' test |
-            '*' test )
-
-comp_iter: comp_for | comp_if
-sync_comp_for: 'for' exprlist 'in' or_test [comp_iter]
-comp_for: [ASYNC] sync_comp_for
-comp_if: 'if' test_nocond [comp_iter]
-
-# not used in grammar, but may appear in "node" passed from Parser to Compiler
-encoding_decl: NAME
-
-yield_expr: 'yield' [yield_arg]
-yield_arg: 'from' test | testlist_star_expr
-
-# the TYPE_COMMENT in suites is only parsed for funcdefs,
-# but can't go elsewhere due to ambiguity
-func_body_suite: simple_stmt | NEWLINE [TYPE_COMMENT NEWLINE] INDENT stmt+ DEDENT
-
-func_type_input: func_type NEWLINE* ENDMARKER
-func_type: '(' [typelist] ')' '->' test
-# typelist is a modified typedargslist (see above)
-typelist: (test (',' test)* [','
-       ['*' [test] (',' test)* [',' '**' test] | '**' test]]
-     |  '*' [test] (',' test)* [',' '**' test] | '**' test)
-
-*/
