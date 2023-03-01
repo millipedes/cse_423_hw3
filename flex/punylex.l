@@ -13,6 +13,7 @@ token * yytoken = NULL;
 tree * head = NULL;
 
 int allocate_tree(int category);
+int allocate_tree_stack(int category, char * value);
 int update_stack(char * value);
 int count_whitespace(char * value);
 %}
@@ -25,16 +26,26 @@ int count_whitespace(char * value);
 \"(\\.|\"\"|[^\"\n])*[\n]       { print_unmatched_quote(yytext, yylineno); }
 
 <<EOF>>                         { return allocate_tree(ENDMARKER); }
-^[ \t]+                         { int stack_result = update_stack(yytext);
-                                    yytoken = init_token(stack_result, yytext,
-                                    yylineno, g_path_wrapper->filename);
-                                  return stack_result; }
+^[ \t]+                         { 
+                                  int value = allocate_tree_stack(NEWLINE, yytext);
+                                  if(value != NODENT)
+                                    return value;
+                                  // int stack_result = update_stack(yytext);
+                                  //   yytoken = init_token(stack_result, yytext,
+                                  //   yylineno, g_path_wrapper->filename);
+                                  // return stack_result;
+                                }
 \\[\n][ \t]*
 
-[\n\v\f\r]/[^ \t\n\v\f\r]+      { int stack_result = update_stack(yytext);
-                                     yytoken = init_token(stack_result, yytext,
-                                     yylineno, g_path_wrapper->filename);
-                                  return stack_result; }
+[\n\v\f\r]/[^ \t\n\v\f\r]+      {
+                                  int value = allocate_tree_stack(NEWLINE, yytext);
+                                  if(value != NODENT)
+                                    return value;
+                                  // int stack_result = update_stack(yytext);
+                                  //    yytoken = init_token(stack_result, yytext,
+                                  //    yylineno, g_path_wrapper->filename);
+                                  // return stack_result;
+                                }
 [\n\v\f\r]                      { return allocate_tree(NEWLINE); }
 
 [ \t]
@@ -139,9 +150,46 @@ int count_whitespace(char * value);
 %%
 
 int allocate_tree(int category) {
+  yytoken = init_token(category, yytext, yylineno, g_path_wrapper->filename);
   yylval.ast = init_tree(init_token(category, yytext, yylineno,
   g_path_wrapper->filename), category);
   return category;
+}
+
+int allocate_tree_stack(int category, char * value) {
+  if(!indent_stack) {
+    void * zero_value = calloc(1, sizeof(int));
+    INT_CAST(zero_value) = 0;
+    indent_stack = init_stack(zero_value);
+  }
+
+  if(IS_NEWLINE(value[0])) {
+    while(INT_CAST(indent_stack->value)) {
+      dedent_qty++;
+      indent_stack = pop(indent_stack);
+    }
+    indent_stack->ate_newline = 1;
+    return allocate_tree(NEWLINE);
+  } else if(IS_TAB_SPACE(value[0])) {
+    int stack_value = count_whitespace(value);
+    if(stack_value > INT_CAST(indent_stack->value)) {
+      void * p_stack_value = calloc(1, sizeof(int));
+      INT_CAST(p_stack_value) = stack_value;
+      indent_stack = push(indent_stack, p_stack_value);
+      return allocate_tree(INDENT);
+    } else if(stack_value < INT_CAST(indent_stack->value)) {
+      while(stack_value < INT_CAST(indent_stack->value)) {
+        dedent_qty++;
+        indent_stack = pop(indent_stack);
+      }
+      return allocate_tree(DEDENT);
+    } else {
+      return allocate_tree(NODENT);
+    }
+  } else {
+    fprintf(stderr, "[UPDATE_STACK]: Error\n");
+    exit(1);
+  }
 }
 
 /**

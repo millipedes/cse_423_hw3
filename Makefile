@@ -50,7 +50,7 @@ $(BISOUTO): $(BISOUT)
 	$(CC) -c $(BISOUT) -o $(BISOUTO)
 
 $(BISOUT): $(BISFILE)
-	$(BIS) -Wcounterexamples -o $(BISOUT) -d $(BISFILE)
+	$(BIS) --verbose -Wcounterexamples -o $(BISOUT) -d $(BISFILE)
 
 $(FLEXOUTO): $(FLEXOUT)
 	$(CC) -c $(FLEXOUT) -o $(FLEXOUTO)

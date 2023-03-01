@@ -47,14 +47,15 @@ const char * token_type_to_string(int type);
 %type <ast> return_stmt raise_stmt yield_stmt import_name import_from parameters
 %type <ast> suite dotted_as_names dotted_name dotted_as_name start file_input
 %type <ast> encoding_decl single_input star_NEWLINE_stmt pick_NEWLINE_stmt
-%type <ast> opt_EQUAL_test star_COMMA_test
+%type <ast> opt_EQUAL_test star_COMMA_test varargslist star_fpdef_COMMA fpdef
+%type <ast> fplist star_fpdef_notest star_COMMA_fpdef small_stmt_STAR_OR_SEMI
 
 %%
 
 start
-	: file_input    { return ENDMARKER; }
-	| encoding_decl { return ENDMARKER; }
-	| single_input  { return ENDMARKER; }
+	: file_input    { debug_tree($1, 5); return ENDMARKER; }
+	| single_input  { debug_tree($1, 5); return ENDMARKER; }
+	| encoding_decl { debug_tree($1, 5); return ENDMARKER; }
 	;
 
 single_input
@@ -68,11 +69,18 @@ file_input
 
 pick_NEWLINE_stmt
 	: NEWLINE
-	| stmt
+	| stmt { $$ = $1; }
 	;
 
 star_NEWLINE_stmt
-	: pick_NEWLINE_stmt star_NEWLINE_stmt
+	: pick_NEWLINE_stmt star_NEWLINE_stmt {
+                                          if($2) {
+                                            $2 = add_child($2, $1);
+                                            $$ = $2;
+                                          } else {
+                                            $$ = $1;
+                                          }
+                                        }
 	| %empty
 	;
 
@@ -93,26 +101,40 @@ decorators
 
 decorated
 	: decorators classdef
-	| decorators funcdef
+	| decorators funcdef {
+                   }
 	;
 
 funcdef
-	: DEF NAME parameters COLON suite {
+	: DEF NAME parameters COLON NEWLINE INDENT {
                                       $1 = add_child($1, $2);
                                       $1 = add_child($1, $3);
                                       $1 = add_child($1, $4);
                                       $1 = add_child($1, $5);
+                                      $1 = add_child($1, $6);
+                                      $$ = $1;
                                     }
 	;
 
 parameters
-	: LPAR varargslist RPAR
-	| LPAR RPAR
+	: LPAR varargslist RPAR {
+                            $1 = add_child($1, $2);
+                            $1 = add_child($1, $3);
+                            $$ = $1;
+                          }
+	| LPAR RPAR { $$ = $1; }
 	;
 
 varargslist
 	: star_fpdef_COMMA pick_STAR_DOUBLESTAR
-	| fpdef opt_EQUAL_test star_COMMA_fpdef
+	| fpdef opt_EQUAL_test star_COMMA_fpdef { 
+                                          if($3) {
+                                            $1 = add_child($1, $3);
+                                            $$ = $1;
+                                          } else {
+                                            $$ = $1;
+                                          }
+                                          }
 	;
 
 opt_EQUAL_test
@@ -124,7 +146,8 @@ opt_EQUAL_test
 	;
 
 star_fpdef_COMMA
-	: fpdef opt_EQUAL_test COMMA star_fpdef_COMMA
+	: fpdef opt_EQUAL_test COMMA star_fpdef_COMMA {
+                                                }
 	| %empty
 	;
 
@@ -139,12 +162,22 @@ pick_STAR_DOUBLESTAR
 	;
 
 fpdef
-	: NAME
-	| LPAR fplist RPAR
+	: NAME {  $$ = $1; }
+	| LPAR fplist RPAR {
+                       $1 = add_child($1, $2);
+                       $$ = $1;
+                     }
 	;
 
 fplist
-	: fpdef star_fpdef_notest
+	: fpdef star_fpdef_notest {
+                              if($2) {
+                                $1 = add_child($1, $2);
+                                $$ = $1;
+                              } else {
+                                $$ = $1;
+                              }
+                            }
 	;
 
 stmt
@@ -153,19 +186,36 @@ stmt
 	;
 
 simple_stmt
-	: small_stmt small_stmt_STAR_OR_SEMI NEWLINE
+	: small_stmt small_stmt_STAR_OR_SEMI NEWLINE {
+                                                 if($2) {
+                                                 // printf("FUCK\n");
+                                                 // debug_tree($1, 0);
+                                                 // printf("FUCK\n");
+                                                 // debug_tree($2, 0);
+                                                 // printf("FUCK\n");
+                                                 // debug_tree($3, 0);
+                                                 // printf("FUCK\n");
+                                                 // printf("here\n");exit(1);
+                                                   $1 = add_child($1, $2);
+                                                   $1 = add_child($1, $3);
+                                                   $$ = $1;
+                                                 } else {
+                                                   $1 = add_child($1, $3);
+                                                   $$ = $1;
+                                                 }
+                                               }
 	;
 
 small_stmt
-	: expr_stmt   { debug_tree($1, 0); return NEWLINE; }
-	| print_stmt  { debug_tree($1, 0); return NEWLINE; }
-	| del_stmt    { debug_tree($1, 0); return NEWLINE; }
-	| pass_stmt   { debug_tree($1, 0); return NEWLINE; }
-	| flow_stmt   { debug_tree($1, 0); return NEWLINE; }
-	| import_stmt { debug_tree($1, 0); return NEWLINE; }
-	| global_stmt { debug_tree($1, 0); return NEWLINE; }
-	| exec_stmt   { debug_tree($1, 0); return NEWLINE; } 
-	| assert_stmt { debug_tree($1, 0); return NEWLINE; }
+	: expr_stmt   { $$ = $1; }
+	| print_stmt  { $$ = $1; }
+	| del_stmt    { $$ = $1; }
+	| pass_stmt   { $$ = $1; }
+	| flow_stmt   { $$ = $1; }
+	| import_stmt { $$ = $1; }
+	| global_stmt { $$ = $1; }
+	| exec_stmt   { $$ = $1; } 
+	| assert_stmt { $$ = $1; }
 	;
 
 expr_stmt
@@ -359,7 +409,7 @@ compound_stmt
 	| for_stmt     { $$ = $1; }
 	| try_stmt     { $$ = $1; }
 	| with_stmt    { $$ = $1; }
-	| funcdef      { $$ = $1; }
+	| funcdef      { $$ = $1; /*debug_tree($1, 0); return NEWLINE;*/ }
 	| classdef     { $$ = $1; }
 	| decorated    { $$ = $1; }
 	;
@@ -434,14 +484,13 @@ opt_AS_COMMA
 	;
 
 suite
-  : simple_stmt 
-	| NEWLINE INDENT {
-                     // TableManager::getInstance().incrScope();
-                   } plus_stmt DEDENT
+  : simple_stmt
+	| NEWLINE INDENT  { } plus_stmt DEDENT
 	;
 
 plus_stmt
 	: stmt plus_stmt {
+                     $$ = $1;
                      // if($1 != NULL)
                      //       funcStmt->push_back($1);
                      //       else funcStmt->push_back(a);
@@ -812,7 +861,14 @@ star_COMMA_expr
 	;
 
 star_COMMA_fpdef
-	: COMMA fpdef opt_EQUAL_test star_COMMA_fpdef
+	: COMMA fpdef opt_EQUAL_test star_COMMA_fpdef {
+                                               if($2) {
+                                                  $1 = add_child($1, $2);
+                                                  $$ = $1;
+                                                } else {
+                                                  $$ = $1;
+                                                }
+                                                }
 	| COMMA
 	| %empty
 	;
@@ -877,8 +933,10 @@ arglist_postlist
 	;
 
 small_stmt_STAR_OR_SEMI
-	: SEMI small_stmt small_stmt_STAR_OR_SEMI
-	| SEMI
+	: SEMI small_stmt small_stmt_STAR_OR_SEMI { $1 = add_child($1, $2);
+                                              $$ = $1;
+                                            }
+	| SEMI                                    { $$ = $1; }
 	| %empty
 	;
 
